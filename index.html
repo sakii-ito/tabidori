@@ -1,0 +1,1142 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>타비도리 스팟 수집장</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     ここから下はぜんぶ「見た目(デザイン)」専用のコード(CSS)。
+     HTMLの部品(ボタンとか入力欄とか)に、色や形、間隔を指定している！
+     JSみたいに「動く処理」はここには書かれていない！
+     ============================================================ */
+
+  /* ----- :root とは？ -----
+     ページ全体で使う「色の変数」をここでまとめて定義している。
+     例えば --paper は「紙みたいな背景色」という名前の変数で、
+     あとで background:var(--paper) のように呼び出して使う！
+     変数化しておくと、色を変えたい時にここ1か所を直すだけで
+     ページ全体の色が一気に変わるので便利！！ */
+  :root{
+    --paper:#FFF9F2;
+    --paper-raised:#FFFFFF;
+    --ink:#4A3B31;
+    --ink-soft:#8A7A6B;
+    --coral:#B4D95C;
+    --coral-deep:#5E7A28;
+    --coral-tint:#EEF5D6;
+    --sky:#6FB8DB;
+    --sky-deep:#1D6E92;
+    --sky-tint:#E3F3FA;
+    --mint:#7FBE9C;
+    --mint-deep:#2E6E4C;
+    --mint-tint:#E4F3EA;
+    --sand:#F1E3D1;
+    --line:#E0CFB8;
+    --danger:#E2483D;
+    --danger-tint:#FBE4E2;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  /* ----- ダークモード対応 -----
+     スマホやPCの設定が「ダークモード(黒っぽい画面)」になっている時、
+     ブラウザが自動でこの中の色に切り替えてくれる！
+     上の:rootで決めた色の「ダークモード版」をここで上書きしている。
+     (ユーザーが手動で data-theme="light" を指定した場合はこれを無視する、
+      という意味が :not([data-theme="light"])　) */
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#211A15;
+      --paper-raised:#2B2219;
+      --ink:#F3E7DA;
+      --ink-soft:#BBA797;
+      --coral:#C3E27E;
+      --coral-deep:#E7F2BC;
+      --coral-tint:#33401C;
+      --sky:#7FC4E8;
+      --sky-deep:#BDE6FA;
+      --sky-tint:#1C2E35;
+      --mint:#8FD0AE;
+      --mint-deep:#C6EBD6;
+      --mint-tint:#1C2E24;
+      --sand:#352A1F;
+      --line:#4A3C2E;
+      --danger:#F0675C;
+      --danger-tint:#3A1F1C;
+    }
+  }
+  /* ----- こっちは「手動で」ダークモードに切り替えた時用 -----
+     上のはOS設定にまかせるパターン、これはJSで
+     document要素に data-theme="dark" をつけた時に効くパターン！
+     (今回のフォームではボタンで切り替える機能はまだ無いが、
+      将来そういうボタンを作る時のために両方用意されている) */
+  :root[data-theme="dark"]{
+    --paper:#211A15;
+    --paper-raised:#2B2219;
+    --ink:#F3E7DA;
+    --ink-soft:#BBA797;
+    --coral:#C3E27E;
+    --coral-deep:#E7F2BC;
+    --coral-tint:#33401C;
+    --sky:#7FC4E8;
+    --sky-deep:#BDE6FA;
+    --sky-tint:#1C2E35;
+    --mint:#8FD0AE;
+    --mint-deep:#C6EBD6;
+    --mint-tint:#1C2E24;
+    --sand:#352A1F;
+    --line:#4A3C2E;
+    --danger:#F0675C;
+    --danger-tint:#3A1F1C;
+  }
+  /* * はページの「全部の要素」を選ぶ記号
+     box-sizing:border-box は「paddingやborderを幅の中に含める」設定で、
+     これを指定しておくとレイアウト崩れが起きにくくなる(おまじない的な設定)。 */
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    /* 背景に小さい水玉(ドット)模様を敷いている！
+       radial-gradientで「丸い点」を作り、background-sizeで
+       点と点の間隔(22px四方)を決めています。旅の地図っぽい雰囲気用。 */
+    background:
+      radial-gradient(circle, var(--line) 1px, transparent 1px);
+    background-size:22px 22px;
+    background-color:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",Roboto,sans-serif;
+    line-height:1.55;
+  }
+  /* .wrap = ページ中身を真ん中に、幅640pxまでに収める「外枠」 */
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:22px 16px 90px;
+  }
+  /* .display = 見出しなど「かわいい手書き風フォント(Gaegu)」を使う場所用のクラス */
+  .display{font-family:"Gaegu","Apple SD Gothic Neo","Malgun Gothic",sans-serif;}
+
+  /* ============================================================
+     ヘッダー部分（スーツケースの荷物タグ風デザイン）
+     ページの一番上にある、タイトルと進捗バーが入った緑色のタグ！
+     ============================================================ */
+  .tag{
+    position:relative;
+    background:var(--coral);
+    color:#33401C;
+    border-radius:18px;
+    padding:20px 22px 22px 54px;
+    margin-bottom:22px;
+    box-shadow:0 2px 0 #6E8F2E;
+  }
+  /* .tag::before / ::after は「タグに穴とミシン目線を描く」ための
+     見えない飾りパーツ！HTMLには書かれていない、CSSだけで
+     追加される架空の要素(擬似要素)なので、HTML側を探しても出てこない。
+     ::before = タグの穴（丸いリング）を描く */
+  .tag::before{
+    content:"";
+    position:absolute;
+    left:20px;
+    top:50%;
+    transform:translateY(-50%);
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    background:var(--paper);
+    box-shadow:inset 0 0 0 2px #6E8F2E;
+  }
+  /* ::after = タグの点線（ミシン目）を描く */
+  .tag::after{
+    content:"";
+    position:absolute;
+    left:36px;
+    top:12px;
+    bottom:12px;
+    border-left:2px dashed rgba(0,0,0,0.2);
+  }
+  .tag h1{
+    font-family:"Gaegu","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    font-weight:700;
+    font-size:1.5rem;
+    margin:0 0 2px;
+  }
+  .tag p{
+    margin:0;
+    font-size:0.88rem;
+    opacity:0.92;
+  }
+
+  /* .route = 「あと何件集めた？」を表す進捗バー（ピンのアイコンが動く） */
+  .route{
+    margin-top:16px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .route-track{
+    position:relative;
+    flex:1;
+    height:6px;
+    border-radius:999px;
+    background:rgba(0,0,0,0.15);
+  }
+  .route-fill{
+    height:100%;
+    border-radius:999px;
+    background:#6E8F2E;
+    transition:width .3s ease;
+  }
+  /* .route-pin = バーの上をスライドして動く「地図ピン」のアイコン。
+     left の値(%)をJS側で変えることで、左右にスルスル移動する！ */
+  .route-pin{
+    position:absolute;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:18px;
+    height:18px;
+    transition:left .3s ease;
+  }
+  .route-count{
+    font-family:"Gaegu","Apple SD Gothic Neo",sans-serif;
+    font-weight:700;
+    font-size:1rem;
+    white-space:nowrap;
+  }
+
+  /* ============================================================
+     ポストカード風の入力フォーム本体
+     入力フォーム全体を「はがき」のような見た目のカードに入れている！
+     ============================================================ */
+  .postcard{
+    position:relative;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:22px 20px;
+    margin-bottom:22px;
+    overflow:hidden;
+  }
+  /* .tape = ポストカードの左上に貼ってある「マスキングテープ」っぽい飾り。
+     repeating-linear-gradientで斜めストライプ模様を作っている！ */
+  .tape{
+    position:absolute;
+    top:-8px;
+    left:28px;
+    width:70px;
+    height:26px;
+    background:repeating-linear-gradient(135deg, var(--mint-tint), var(--mint-tint) 6px, var(--sand) 6px, var(--sand) 12px);
+    opacity:0.9;
+    transform:rotate(-4deg);
+    border-radius:3px;
+  }
+  .section{
+    margin-top:22px;
+  }
+  .section:first-of-type{margin-top:6px;}
+  .section-head{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .section-dot{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--coral);
+    flex-shrink:0;
+  }
+  .section-head h2{
+    font-family:"Gaegu","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    font-weight:700;
+    font-size:1.08rem;
+    margin:0;
+  }
+  .hint{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    margin:-6px 0 12px;
+  }
+
+  /* .grid = 入力欄を「2列」に並べるための設定。
+     .field.full をつけた項目だけは1行まるごと(2列分)使う！ */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field.full{grid-column:1/-1;}
+  label{font-size:0.82rem;color:var(--ink-soft);}
+  /* label.req = 「必須項目」のラベルの後ろに赤い * を自動で表示する */
+  label.req::after{content:" *";color:var(--coral-deep);}
+
+  /* 文字入力欄・プルダウン・テキストエリアの共通デザイン */
+  input[type=text],input[type=url],input[type=number],input[type=time],select,textarea{
+    width:100%;
+    padding:9px 11px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    background:var(--paper);
+    color:var(--ink);
+    font-size:0.92rem;
+    font-family:inherit;
+  }
+  textarea{resize:vertical;min-height:46px;}
+  input:focus,select:focus,textarea:focus{
+    outline:none;
+    border-color:var(--coral);
+    box-shadow:0 0 0 3px var(--coral-tint);
+  }
+
+  /* ----- 定休日ボタン（月・火・水…の丸いボタン） -----
+     押すと色がつく・もう一回押すと元に戻る「トグルボタン
+     .on というクラスがついているかどうかで見た目が変わる
+     （実際にON/OFFを切り替える処理はJS側にある） */
+  .day-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .day-chip{
+    width:40px;height:40px;
+    border-radius:50%;
+    border:1.5px solid var(--line);
+    background:var(--paper);
+    color:var(--ink);
+    font-size:0.85rem;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .day-chip.on{
+    background:var(--coral);
+    border-color:var(--coral);
+    color:var(--paper-raised);
+    font-weight:700;
+  }
+
+  /* ----- 入場料の「有料/無料」切り替えスイッチ -----
+     スマホの設定画面にあるような丸いON/OFFスイッチの見た目
+     .switch.on がついている時だけ、丸いつまみが右に移動する */
+  .switch-row{
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:4px;
+  }
+  .switch{
+    position:relative;width:46px;height:26px;
+    border-radius:999px;background:var(--line);
+    cursor:pointer;flex-shrink:0;
+    transition:background .2s ease;
+  }
+  .switch.on{background:var(--mint);}
+  .switch::after{
+    content:"";
+    position:absolute;top:3px;left:3px;
+    width:20px;height:20px;border-radius:50%;
+    background:var(--paper-raised);
+    transition:left .2s ease;
+    box-shadow:0 1px 2px rgba(0,0,0,0.2);
+  }
+  .switch.on::after{left:23px;}
+  .switch-label{font-size:0.9rem;font-weight:600;}
+  /* .fee-fields = スイッチがOFFの間は隠しておく「料金入力エリア」。
+     .show クラスがついた時だけ display:block で表示される */
+  .fee-fields{
+    display:none;
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px dashed var(--line);
+  }
+  .fee-fields.show{display:block;}
+  /* .ticket-row = 「チケット種類」1件分(平日券・休日券など)の入力欄をまとめた箱。
+     JSの addTicketRow() 関数が、押すたびにこの箱をコピーして増やしていく！ */
+  .ticket-row{
+    position:relative;
+    background:var(--sand);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 38px 12px 12px;
+    margin-bottom:10px;
+  }
+  .ticket-row .grid{grid-template-columns:1fr 1fr;gap:8px;}
+  .ticket-row .field.full{grid-column:1/-1;}
+  .ticket-row-remove{
+    position:absolute;top:8px;right:8px;
+    width:24px;height:24px;border-radius:50%;
+    border:none;background:var(--paper);
+    color:var(--danger);font-size:0.9rem;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .ticket-row-remove:hover{background:var(--danger-tint);}
+  .btn-small{
+    padding:7px 14px;font-size:0.82rem;
+  }
+
+  /* ----- 太ったピル型の「タグ」ボタン（야경・전망좋음 など） -----
+     定休日ボタンと同じ「押すとON/OFFが切り替わる」仕組み
+     色がついた(.on)タグだけが、最終的に保存される時に選ばれる */
+  .tag-group{margin-bottom:14px;}
+  .tag-group-label{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    margin-bottom:7px;
+  }
+  .chip-row{display:flex;flex-wrap:wrap;gap:7px;}
+  .chip{
+    padding:6px 13px;
+    border-radius:999px;
+    border:1.5px solid var(--line);
+    background:var(--paper);
+    color:var(--ink);
+    font-size:0.82rem;
+    cursor:pointer;
+    user-select:none;
+  }
+  .chip.on{
+    background:var(--sky);
+    border-color:var(--sky);
+    color:#06313F;
+    font-weight:700;
+  }
+
+  .actions{
+    display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;
+  }
+  button{
+    font-family:inherit;font-size:0.92rem;
+    border-radius:999px;border:none;
+    padding:11px 20px;cursor:pointer;
+  }
+  .btn-primary{
+    background:var(--coral);color:var(--paper-raised);
+    font-weight:700;
+    box-shadow:0 2px 0 var(--coral-deep);
+  }
+  .btn-ghost{
+    background:var(--paper);
+    border:1.5px solid var(--line);
+    color:var(--ink);
+  }
+  .error-text{
+    font-size:0.78rem;color:var(--danger);
+    margin-top:2px;
+  }
+
+  /* ============================================================
+     保存済みスポット一覧（下に表示される「チケット風カード」たち）
+     フォームを送信すると、ここに1件ずつカードが追加されていく。
+     ============================================================ */
+  .list-head{display:flex;align-items:center;gap:8px;margin:0 0 14px 4px;}
+  .list-head h2{
+    font-family:"Gaegu","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    font-weight:700;font-size:1.15rem;margin:0;
+  }
+  .empty{
+    text-align:center;color:var(--ink-soft);
+    font-size:0.9rem;
+    border:1.5px dashed var(--line);
+    border-radius:14px;
+    padding:30px 14px;
+  }
+  /* .ticket = 1件のスポットを表す「チケット」カード本体。
+     中が左右2つに分かれていて、左(.ticket-main)に情報、
+     右(.ticket-stub)に削除ボタンが入っている「もぎり」デザイン */
+  .ticket{
+    position:relative;
+    display:flex;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:14px;
+    margin-bottom:12px;
+    overflow:hidden;
+  }
+  .ticket-main{flex:1;padding:14px 16px;min-width:0;}
+  .ticket-stub{
+    width:44px;flex-shrink:0;
+    background:var(--sand);
+    display:flex;align-items:center;justify-content:center;
+    border-left:2px dashed var(--line);
+  }
+  .ticket-stub button{
+    background:none;border:none;
+    color:var(--danger);
+    font-size:1.1rem;
+    cursor:pointer;
+    padding:6px;
+    border-radius:8px;
+  }
+  .ticket-stub button:hover{background:var(--danger-tint);}
+  .ticket-top{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:8px;
+  }
+  .ticket-name{font-weight:700;font-size:1rem;}
+  .ticket-cat{
+    font-size:0.72rem;font-weight:700;
+    background:var(--coral-tint);color:var(--coral-deep);
+    border-radius:999px;padding:2px 9px;
+    white-space:nowrap;
+  }
+  .ticket-meta{
+    margin-top:7px;font-size:0.83rem;color:var(--ink-soft);
+    display:flex;flex-direction:column;gap:3px;
+  }
+  .ticket-meta b{color:var(--ink);font-weight:600;}
+  .ticket-meta a{color:var(--sky-deep);}
+  .ticket-tags{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px;}
+  .sticker{
+    font-size:0.72rem;
+    background:var(--mint-tint);color:var(--mint-deep);
+    border-radius:999px;padding:2px 9px;
+  }
+  .ticket-img{
+    width:100%;max-height:140px;object-fit:cover;
+    border-radius:10px;margin-top:10px;
+  }
+
+  /* .toast = 「담았어요!」みたいに画面下にポッと一瞬出るお知らせ。
+     .show クラスがついた時だけ opacity:1 になってフワッと表示される
+     （JSのshowToast()関数が、このクラスを付けたり消したりしている） */
+  .toast{
+    position:fixed;left:50%;bottom:24px;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:var(--paper);
+    padding:10px 18px;border-radius:999px;
+    font-size:0.85rem;opacity:0;pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    z-index:50;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:460px){
+    .grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="tag">
+    <h1 class="display">타비도리 스팟 수집장</h1>
+    <div class="route">
+      <div class="route-track" id="routeTrack">
+        <div class="route-fill" id="routeFill" style="width:0%"></div>
+        <svg class="route-pin" id="routePin" style="left:0%" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C7.58 2 4 5.58 4 10c0 5.25 7 11.5 7.3 11.76a1 1 0 0 0 1.4 0C13 21.5 20 15.25 20 10c0-4.42-3.58-8-8-8z" fill="#5E7A28"/>
+          <circle cx="12" cy="10" r="3" fill="#EEF5D6"/>
+        </svg>
+      </div>
+      <span class="route-count display" id="routeCount">0 / 60</span>
+    </div>
+  </header>
+
+  <form class="postcard" id="spotForm">
+    <div class="tape"></div>
+
+    <div class="section">
+      <div class="section-head"><span class="section-dot"></span><h2>기본 정보</h2></div>
+      <div class="grid">
+        <div class="field full">
+          <label class="req" for="f-name">스팟 이름</label>
+          <input type="text" id="f-name" placeholder="예: 돈키호테 신주쿠점" required>
+        </div>
+        <div class="field">
+          <label for="f-cat">카테고리</label>
+          <select id="f-cat">
+            <option value="관광지">관광지</option>
+            <option value="맛집">맛집</option>
+            <option value="카페">카페</option>
+            <option value="숙소">숙소</option>
+            <option value="쇼핑">쇼핑</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-place">place_id</label>
+          <input type="text" id="f-place" placeholder="구글맵에 있으면 입력">
+        </div>
+        <div class="field full">
+          <label for="f-desc">한줄 소개</label>
+          <textarea id="f-desc" placeholder="이 장소가 어떤 곳인지 1~2문장으로"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><span class="section-dot"></span><h2>위치 · 접근</h2></div>
+      <div class="grid">
+        <div class="field full">
+          <label for="f-addr">주소</label>
+          <input type="text" id="f-addr" placeholder="예: 도쿄도 신주쿠구 ...">
+        </div>
+        <div class="field full">
+          <label for="f-map">지도 링크 (또는 위도,경도)</label>
+          <input type="text" id="f-map" placeholder="https://maps.google.com/...">
+        </div>
+        <div class="field">
+          <label for="f-station">가장 가까운 역</label>
+          <input type="text" id="f-station" placeholder="예: 신주쿠역">
+        </div>
+        <div class="field">
+          <label for="f-walk">역에서 도보(분)</label>
+          <input type="number" id="f-walk" min="0" placeholder="예: 5">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><span class="section-dot"></span><h2>운영 정보</h2></div>
+      <p class="hint">duration은 공식 안내나 확실한 근거가 있을 때만 적어주세요.</p>
+      <div class="grid">
+        <div class="field">
+          <label for="f-open">영업 시작</label>
+          <input type="time" id="f-open">
+        </div>
+        <div class="field">
+          <label for="f-close">영업 종료</label>
+          <input type="time" id="f-close">
+        </div>
+        <div class="field full">
+          <label for="f-hoursnote">예외사항</label>
+          <input type="text" id="f-hoursnote" placeholder="브레이크타임, 연말연시 등">
+        </div>
+        <div class="field full">
+          <label>정기 휴무 요일</label>
+          <div class="day-row" id="dayRow">
+            <button type="button" class="day-chip" data-day="월">월</button>
+            <button type="button" class="day-chip" data-day="화">화</button>
+            <button type="button" class="day-chip" data-day="수">수</button>
+            <button type="button" class="day-chip" data-day="목">목</button>
+            <button type="button" class="day-chip" data-day="금">금</button>
+            <button type="button" class="day-chip" data-day="토">토</button>
+            <button type="button" class="day-chip" data-day="일">일</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-advance">사전예매 가능 개월수</label>
+          <input type="number" id="f-advance" min="0" placeholder="예: 3">
+        </div>
+        <div class="field">
+          <label for="f-parking">주차장</label>
+          <select id="f-parking">
+            <option value="">모름</option>
+            <option value="있음">있음</option>
+            <option value="없음">없음</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-duration">체류 목안 시간(분)</label>
+          <input type="number" id="f-duration" min="0" placeholder="근거 있을 때만">
+        </div>
+        <div class="field" style="justify-content:flex-end;">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
+            <input type="checkbox" id="f-needscheck" style="width:16px;height:16px;">
+            정보 재확인 필요
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><span class="section-dot"></span><h2>입장료</h2></div>
+      <div class="switch-row">
+        <div class="switch" id="feeSwitch" role="button" tabindex="0" aria-label="입장료 유무"></div>
+        <span class="switch-label" id="feeLabel">무료</span>
+      </div>
+      <div class="fee-fields" id="feeFields">
+        <div id="ticketRows"></div>
+        <button type="button" class="btn-ghost btn-small" id="addTicketBtn">+ 티켓 종류 추가</button>
+        <div class="grid" style="margin-top:14px;">
+          <div class="field full">
+            <label for="f-feenote">연령 기준 비고</label>
+            <input type="text" id="f-feenote" placeholder="예: 초등학생까지 어린이 요금">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><span class="section-dot"></span><h2>태그</h2></div>
+      <div class="tag-group">
+        <div class="tag-group-label">분위기 · 뷰</div>
+        <div class="chip-row" data-group="tags">
+          <button type="button" class="chip">야경</button>
+          <button type="button" class="chip">전망좋음</button>
+          <button type="button" class="chip">포토스팟</button>
+          <button type="button" class="chip">인스타감성</button>
+          <button type="button" class="chip">한적함</button>
+        </div>
+      </div>
+      <div class="tag-group">
+        <div class="tag-group-label">계절 · 이벤트</div>
+        <div class="chip-row" data-group="tags">
+          <button type="button" class="chip">벚꽃</button>
+          <button type="button" class="chip">단풍</button>
+          <button type="button" class="chip">일루미네이션</button>
+          <button type="button" class="chip">눈경치</button>
+          <button type="button" class="chip">불꽃놀이</button>
+        </div>
+      </div>
+      <div class="tag-group">
+        <div class="tag-group-label">편의시설</div>
+        <div class="chip-row" data-group="tags">
+          <button type="button" class="chip">실내</button>
+          <button type="button" class="chip">와이파이</button>
+          <button type="button" class="chip">24시간</button>
+          <button type="button" class="chip">휠체어 이용가능</button>
+        </div>
+      </div>
+      <div class="tag-group">
+        <div class="tag-group-label">대상 · 상황</div>
+        <div class="chip-row" data-group="tags">
+          <button type="button" class="chip">아이동반 가능</button>
+          <button type="button" class="chip">커플추천</button>
+          <button type="button" class="chip">혼자여행 추천</button>
+          <button type="button" class="chip">단체여행 가능</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><span class="section-dot"></span><h2>그 외</h2></div>
+      <div class="grid">
+        <div class="field full">
+          <label for="f-home">공식 홈페이지 URL</label>
+          <input type="url" id="f-home" placeholder="https://...">
+        </div>
+        <div class="field full">
+          <label for="f-img">대표 이미지 URL</label>
+          <input type="url" id="f-img" placeholder="https://...">
+        </div>
+      </div>
+    </div>
+
+    <div id="formError" class="error-text" style="display:none;"></div>
+    <div class="actions">
+      <button type="submit" class="btn-primary">+ 다이어리에 담기</button>
+      <button type="button" class="btn-ghost" id="exportBtn">CSV로 내보내기</button>
+    </div>
+  </form>
+
+  <section>
+    <div class="list-head"><h2 class="display">모은 스팟들</h2></div>
+    <div id="listArea"></div>
+  </section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   ここから下がJavaScript（画面を「動かす」部分）
+   CSSは見た目だけだったが、JSは
+   「ボタンを押したら〇〇する」「入力されたデータを保存する」
+   のような“動き”を担当している。
+
+   (function(){ ... })();  という形は「無名関数を今すぐ実行する」という
+   おまじないのような書き方で、IIFE（即時実行関数）と呼ばれる！
+   これで囲むことで、中で作った変数が外のコードとぶつからないようにしている。
+   ============================================================ */
+(function(){
+  // ===== データの保存先 =====
+  // localStorage: このブラウザの中だけにデータを保存する小さな保管場所
+  // サーバーではないので、別のパソコン・ブラウザには引き継がれない
+  const STORAGE_KEY = "tabidori_spots_v4";
+  const GOAL = 60; // 目標のスポット数
+
+  // 保存されているデータを読み込む（なければ空の配列）
+  function loadSpots(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : []; // JSON.parse: 文字列 → 配列/オブジェクトに戻す
+    }catch(e){ return []; }
+  }
+  // データを保存する（配列 → 文字列に変換して保存）
+  function saveSpots(spots){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(spots)); } // JSON.stringify: 配列 → 文字列に変換
+    catch(e){ showToast("저장에 실패했어요"); }
+  }
+
+  // ----- ページが開かれた瞬間に用意しておく「状態(今の値)」-----
+  // spots: これまで保存した全スポットの配列（リスト）。ページを開いた時点の保存データが入る
+  let spots = loadSpots();
+  // selectedDays: 今チェックが入っている定休日の配列。例: ["월","화"]
+  let selectedDays = [];
+  // selectedTags: 今チェックが入っているタグの配列。例: ["야경","포토스팟"]
+  let selectedTags = [];
+  // feeOn: 入場料スイッチが今ON(有料)かOFF(無料)かを覚えておく変数
+  let feeOn = false;
+
+  // document.getElementById("〇〇") は、HTML側で id="〇〇" と書いた部品を
+  // JSから取ってきて変数に入れる、という意味。以後この変数越しに操作する。
+  const listArea = document.getElementById("listArea");   // 保存済みスポット一覧を表示するエリア
+  const toastEl = document.getElementById("toast");         // 下に出るお知らせのボックス
+  const routeFill = document.getElementById("routeFill");   // 進捗バーの緑色の部分
+  const routePin = document.getElementById("routePin");     // 進捗バーの上を動くピンのアイコン
+  const routeCount = document.getElementById("routeCount"); // "3 / 60" のような文字
+
+  // ===== 文字をそのままHTMLに埋め込むと危険な記号(<,>など)を無害な文字に変換する関数 =====
+  // 例えばユーザーが名前に <script> みたいな文字を入れても、
+  // そのままHTMLに差し込むと変な動きをしてしまう可能性があるため、
+  // &lt; のような「文字実体参照」に変換して安全に表示できるようにしている。
+  function escapeHtml(s){
+    // s || "" : sが未入力(undefined/null)だったら空文字にする
+    // .replace(正規表現, 関数) : 対象の記号を見つけるたびに、対応する安全な文字に置き換える
+    return String(s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  // ===== 画面下に「담았어요！」のようなお知らせを一瞬だけ出す関数 =====
+  function showToast(msg){
+    toastEl.textContent = msg;             // お知らせの文字を差し替える
+    toastEl.classList.add("show");          // CSSの.show(表示用)クラスを付けてフワッと表示
+    // 1700ミリ秒(1.7秒)後に自動でクラスを外して、お知らせを消す
+    setTimeout(()=>toastEl.classList.remove("show"), 1700);
+  }
+
+  // ===== 「今何件集まったか」の進捗バーを更新する関数 =====
+  // 保存件数を変える操作（追加・削除）のたびに毎回呼び出している
+  function renderProgress(){
+    // 達成率(%)を計算。100を超えないように Math.min(100, ...) でストッパーをかけている
+    const pct = Math.min(100, Math.round((spots.length/GOAL)*100));
+    routeFill.style.width = pct + "%";   // バーの緑色の幅をパーセントに合わせて伸ばす
+    routePin.style.left = pct + "%";     // ピンのアイコンも同じ位置まで移動させる
+    routeCount.textContent = spots.length + " / " + GOAL; // "12 / 60" のような文字に更新
+  }
+
+  // ===== 保存したスポット一覧を画面に描く =====
+  // spots配列を1件ずつチケット風のカードHTMLに変換して、全部つなげて表示する
+  // JSでは「HTMLの文字列」を自分で組み立てて innerHTML に入れることで、
+  // 画面に新しい部品を表示する、というやり方をよく使う。
+  function renderList(){
+    // まだ1件も保存されていない時は「空っぽメッセージ」だけ出して終了
+    if(spots.length === 0){
+      listArea.innerHTML = '<div class="empty">아직 모은 스팟이 없어요. 위 양식으로 첫 스팟을 담아보세요 :)</div>';
+      return; // ここで関数を抜ける（これ以降の処理はやらない）
+    }
+    // spots.slice() : 元の配列を壊さずコピーを作る（.reverse()で順番を変えるため）
+    // .reverse() : 新しく追加した物が「一番上」に表示されるように順番を逆にする
+    // .map(s => ...) : spots配列の1件ずつ(s)を、下のHTML文字列に変換していく
+    listArea.innerHTML = spots.slice().reverse().map(s => {
+      // 画像URLが入力されていれば<img>タグを作る。無ければ空文字（＝何も表示しない）
+      // onerror="..." は、画像の読み込みに失敗した時(リンク切れなど)に
+      // 自動で非表示にする保険の処理
+      const img = s.image ? '<img class="ticket-img" src="'+escapeHtml(s.image)+'" alt="" onerror="this.style.display=\'none\'">' : "";
+
+      // rows: カードの中に表示する「情報の行」を1つずつ追加していく配列
+      // 値が入力されている項目だけ rows.push(...) で追加するので、
+      // 空欄の項目はカードに表示されない仕組みになっている
+      const rows = [];
+      if(s.address) rows.push('<span><b>주소</b> '+escapeHtml(s.address)+'</span>');
+      if(s.station) rows.push('<span><b>역</b> '+escapeHtml(s.station)+(s.walk?' · 도보 '+escapeHtml(s.walk)+'분':'')+'</span>');
+      if(s.openTime || s.closeTime) rows.push('<span><b>시간</b> '+escapeHtml(s.openTime||'?')+' ~ '+escapeHtml(s.closeTime||'?')+'</span>');
+      if(s.closedDays && s.closedDays.length) rows.push('<span><b>휴무</b> '+s.closedDays.join(', ')+'</span>');
+      if(s.desc) rows.push('<span>'+escapeHtml(s.desc)+'</span>');
+      // 入場料が有料(s.fee===true)で、チケット情報が1件以上ある時だけ、
+      // チケットの種類ごと(平日券・休日券など)に1行ずつ金額を表示する
+      if(s.fee && s.tickets && s.tickets.length){
+        s.tickets.forEach(t=>{
+          const label = t.label ? escapeHtml(t.label) : "입장료";
+          // yen: 金額が入っていれば「1000円」のように円マークを付け、
+          //       未入力なら "-" を表示する小さなヘルパー関数
+          const yen = v => v ? v+"円" : "-";
+          rows.push('<span><b>'+label+'</b> 성인 '+yen(t.adult)+' · 청소년 '+yen(t.teen)+' · 노인 '+yen(t.senior)+' · 어린이 '+yen(t.child)+'</span>');
+        });
+      }
+      if(s.feeNote) rows.push('<span><b>요금 비고</b> '+escapeHtml(s.feeNote)+'</span>');
+      // 「정보 재확인 필요」にチェックが入っていたら、赤文字の注意書きを追加
+      if(s.needsCheck) rows.push('<span style="color:var(--danger)">⚠ 정보 재확인 필요</span>');
+      if(s.home) rows.push('<span><b>홈페이지</b> <a href="'+escapeHtml(s.home)+'" target="_blank" rel="noopener">열기</a></span>');
+      // タグ(야경・포토스팟など)を、ひとつずつ小さいシール風のHTMLに変換して連結
+      const tags = (s.tags||[]).map(t=>'<span class="sticker">'+escapeHtml(t)+'</span>').join("");
+
+      // 上で作ったパーツ(rows, tags, img)を全部組み合わせて、
+      // 1件分のチケットカードのHTMLを完成させて返す
+      return (
+        '<div class="ticket" data-id="'+s.id+'">' +            // data-id に保存時のIDを入れておく（削除の時に使う）
+          '<div class="ticket-main">' +
+            '<div class="ticket-top">' +
+              '<span class="ticket-name">'+escapeHtml(s.name)+'</span>' +
+              '<span class="ticket-cat">'+escapeHtml(s.category)+'</span>' +
+            '</div>' +
+            '<div class="ticket-meta">'+rows.join("")+'</div>' +   // 上で集めたrowsを1つの文字列にして差し込む
+            (tags ? '<div class="ticket-tags">'+tags+'</div>' : '') +
+            img +
+          '</div>' +
+          '<div class="ticket-stub"><button type="button" data-del="'+s.id+'" aria-label="삭제">✕</button></div>' +
+        '</div>'
+      );
+    }).join(""); // .map()で作った文字列の配列を、全部つなげて1つの大きなHTML文字列にする
+
+    // 今画面に表示されている「削除(✕)」ボタン全部に、1つずつクリックイベントを付ける
+    // （カードは毎回まるごと作り直されるので、このイベント設定もrenderList()が呼ばれるたびに
+    //   最初からやり直している、という点がポイント）
+    listArea.querySelectorAll("[data-del]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.getAttribute("data-del"); // どのカードの削除ボタンか、IDを取得
+        // spots配列から「IDが一致しないものだけ」を残す → 結果的にそのIDの物だけ消える
+        spots = spots.filter(s=>String(s.id)!==String(id));
+        saveSpots(spots);   // 削除した後の状態をlocalStorageに保存
+        renderList();       // 一覧を再描画（削除されたカードが消えた状態になる）
+        renderProgress();   // 件数が変わったので進捗バーも更新
+        showToast("삭제했어요");
+      });
+    });
+  }
+
+  // ===== 定休日ボタン（トグル方式） =====
+  // クリックするたびに「選択済みなら外す／未選択なら入れる」を繰り返すだけのシンプルな仕組み
+  // document.querySelectorAll(".day-chip") で、月〜日の7つのボタンを全部まとめて取得し、
+  // forEach で1つずつ同じ処理（クリックイベントの設定）を付けていく
+  document.querySelectorAll(".day-chip").forEach(chip=>{
+    chip.addEventListener("click", ()=>{
+      // HTML側に書いた data-day="월" のような値を取り出す
+      const day = chip.getAttribute("data-day");
+      if(selectedDays.includes(day)){
+        // すでに選択済みリストに入っている → 押すと「選択を外す」
+        selectedDays = selectedDays.filter(d=>d!==day); // dayと一致しないものだけ残す＝dayを除外
+        chip.classList.remove("on"); // 見た目も元の色に戻す
+      }else{
+        // まだ選択されていない → 押すと「選択リストに追加する」
+        selectedDays.push(day);
+        chip.classList.add("on"); // 見た目を緑色(ON)に変える
+      }
+    });
+  });
+
+  // ===== タグボタン（曜日ボタンと同じトグル方式） =====
+  // 「분위기·뷰」「계절·이벤트」など4グループ分のタグボタンを、
+  // グループに関係なく全部まとめて1回で処理している
+  document.querySelectorAll('.chip-row[data-group="tags"] .chip').forEach(chip=>{
+    chip.addEventListener("click", ()=>{
+      const val = chip.textContent; // ボタンに書かれている文字そのもの（例:"야경"）をタグの値として使う
+      if(selectedTags.includes(val)){
+        selectedTags = selectedTags.filter(t=>t!==val); // すでにあれば外す
+        chip.classList.remove("on");
+      }else{
+        selectedTags.push(val); // なければ追加する
+        chip.classList.add("on");
+      }
+    });
+  });
+
+  // ===== 入場料セクション =====
+  const feeSwitch = document.getElementById("feeSwitch");     // 有料/無料のON-OFFスイッチ本体
+  const feeFields = document.getElementById("feeFields");     // スイッチONの時だけ見える料金入力エリア全体
+  const feeLabel = document.getElementById("feeLabel");       // "무료"/"유료" という表示の文字
+  const ticketRows = document.getElementById("ticketRows");   // チケット種類の入力欄が入っている箱
+  const addTicketBtn = document.getElementById("addTicketBtn"); // "＋ 티켓 종류 추가" ボタン
+
+  // 「＋ チケット種類を追加」ボタンを押すたびに、この関数で入力欄のまとまりを
+  // ひとつ新しく作って画面に追加する（平日券・休日券など複数チケット対応）
+  // data を渡した場合は、その値を最初から入力欄にセットしておく（今回は空のまま呼ぶだけだが、
+  // 将来「編集機能」を作る時に既存データを入れ直せるように用意されている）
+  function addTicketRow(data){
+    data = data || {}; // dataが渡されなかった場合は空オブジェクトにしておく（エラー防止）
+
+    const row = document.createElement("div"); // ① まだ何も入っていない空のdiv要素を新しく作る
+    row.className = "ticket-row";               // ② CSSの .ticket-row のデザインを適用するクラス名を付ける
+    // ③ そのdivの中身(innerHTML)に、1種類のチケット分の入力欄(名前・성인・청소년・노인・어린이)を
+    //    HTML文字列として丸ごと書き込む。文字列を+でつないで組み立てています
+    row.innerHTML =
+      '<button type="button" class="ticket-row-remove" aria-label="이 티켓 삭제">✕</button>' +
+      '<div class="grid">' +
+        '<div class="field full">' +
+          '<label>티켓 이름</label>' +
+          '<input type="text" class="t-label" placeholder="예: 평일권, 주말권, 성수기권">' +
+        '</div>' +
+        '<div class="field"><label>성인</label><input type="number" class="t-adult" min="0" placeholder="円"></div>' +
+        '<div class="field"><label>청소년</label><input type="number" class="t-teen" min="0" placeholder="円"></div>' +
+        '<div class="field"><label>노인</label><input type="number" class="t-senior" min="0" placeholder="円"></div>' +
+        '<div class="field"><label>어린이</label><input type="number" class="t-child" min="0" placeholder="円"></div>' +
+      '</div>';
+    // ④ data(もし値があれば)の内容を、作った入力欄に流し込む。無ければ空文字("")のまま
+    row.querySelector(".t-label").value = data.label || "";
+    row.querySelector(".t-adult").value = data.adult || "";
+    row.querySelector(".t-teen").value = data.teen || "";
+    row.querySelector(".t-senior").value = data.senior || "";
+    row.querySelector(".t-child").value = data.child || "";
+    // ⑤ このチケット行専用の削除(✕)ボタンにクリック処理を付ける
+    row.querySelector(".ticket-row-remove").addEventListener("click", ()=>{
+      row.remove(); // この行だけを画面から取り除く
+      // 全部消して0件になった場合は、空欄が1つも無い状態を避けるため
+      // 自動的に新しい空の行を1つ作っておく（常に最低1行は表示される）
+      if(ticketRows.children.length === 0) addTicketRow();
+    });
+    ticketRows.appendChild(row); // ⑥ 完成した行を、画面上のticketRowsという箱の中に実際に追加する
+  }
+  // ===== チケット入力欄を「最初の状態（1行だけ空っぽ）」に戻す関数 =====
+  // フォーム送信後や、新しく入力をやり直す時に呼ばれます
+  function resetTicketRows(){
+    ticketRows.innerHTML = ""; // 今ある行を全部消す（空文字を入れると中身が空になる）
+    addTicketRow();            // 空の行を1つだけ新しく作る
+  }
+  // ===== 画面に出ているすべてのチケット入力欄を集めて、配列（リスト）にまとめる関数 =====
+  // フォーム送信時に呼ばれて「結局何種類のチケットが入力されたか」をまとめて取得する
+  function collectTickets(){
+    // Array.from(...) : querySelectorAllの結果(特殊な形)を、ふつうの配列に変換する
+    // .map(row => ({...})) : 行(row)1つずつから、各入力欄の値を取り出してオブジェクトに変換
+    return Array.from(ticketRows.querySelectorAll(".ticket-row")).map(row => ({
+      label: row.querySelector(".t-label").value.trim(),  // .trim()で前後の余計な空白を削除
+      adult: row.querySelector(".t-adult").value,
+      teen: row.querySelector(".t-teen").value,
+      senior: row.querySelector(".t-senior").value,
+      child: row.querySelector(".t-child").value
+    // .filter(...) : 名前も金額も全部空っぽの行(何も入力されていない行)は結果から除外する
+    })).filter(t => t.label || t.adult || t.teen || t.senior || t.child);
+  }
+  addTicketBtn.addEventListener("click", ()=>addTicketRow()); // ボタンを押したら新しい行を1つ追加
+
+  // ===== 有料/無料のスイッチを切り替える関数 =====
+  function toggleFee(){
+    feeOn = !feeOn; // 今の反対の値にする（trueならfalseに、falseならtrueに）
+    feeSwitch.classList.toggle("on", feeOn);     // feeOnがtrueなら.onを付け、falseなら外す
+    feeFields.classList.toggle("show", feeOn);   // 料金入力エリアの表示/非表示も同じように切り替える
+    feeLabel.textContent = feeOn ? "유료" : "무료"; // 文字も合わせて変更
+    // ONにした瞬間、まだ1件も入力欄が無ければ最初の1行を自動で用意する
+    if(feeOn && ticketRows.children.length === 0) addTicketRow();
+  }
+  feeSwitch.addEventListener("click", toggleFee); // マウスでクリックした時
+  // キーボードでEnterキーかスペースキーを押した時も、クリックと同じ動作にする
+  // （マウスが使えない人でも操作できるようにするための配慮：アクセシビリティ対応）
+  feeSwitch.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleFee(); }});
+  resetTicketRows(); // ページを開いた最初の時点で、空のチケット行を1つ表示しておく
+
+  const form = document.getElementById("spotForm");
+  const formError = document.getElementById("formError");
+
+  // ===== 「＋ 다이어리에 담기」ボタン(フォーム送信)を押したときの処理 =====
+  // 全体の流れ：
+  //   ① 名前が入力されているかチェック（必須項目なので）
+  //   ② 画面の全部の入力欄から値を集めて、1つのオブジェクト(entry)にまとめる
+  //   ③ entryをspots配列に追加する
+  //   ④ localStorageに保存する
+  //   ⑤ 画面(一覧・進捗バー)を描き直す
+  //   ⑥ フォームを空っぽに戻して、次の1件を入力しやすくする
+  form.addEventListener("submit", e=>{
+    e.preventDefault(); // ページの再読み込みを止める（フォームのデフォルト動作をキャンセル）
+
+    // ----- ① 必須項目（スポット名）のチェック -----
+    const name = document.getElementById("f-name").value.trim();
+    if(!name){
+      // 名前が空っぽだったら、エラー文を表示してここで処理を止める（これ以降に進まない）
+      formError.textContent = "스팟 이름은 꼭 입력해주세요";
+      formError.style.display = "block";
+      document.getElementById("f-name").focus(); // 入力欄に自動でカーソルを戻す
+      return; // 関数をここで終了。下のentry作成には進まない
+    }
+    formError.style.display = "none"; // チェックを通ったので、前回出ていたエラー文は隠す
+
+    // ----- ② 画面の各入力欄から値を取り出して、1つのオブジェクトにまとめる -----
+    // document.getElementById("f-〇〇").value で、その入力欄に今入っている文字を取得できる
+    const entry = {
+      // id: 他のスポットと絶対に被らない識別用の文字列を作る。
+      //     今この瞬間の時刻(Date.now())＋ランダムな文字をくっつけることで、
+      //     ほぼ確実に世界で1つだけのユニークな値になる
+      id: Date.now()+"_"+Math.random().toString(36).slice(2,7),
+      name: name,
+      category: document.getElementById("f-cat").value,          // プルダウンで選んだカテゴリ
+      placeId: document.getElementById("f-place").value.trim(),
+      desc: document.getElementById("f-desc").value.trim(),
+      address: document.getElementById("f-addr").value.trim(),
+      mapUrl: document.getElementById("f-map").value.trim(),
+      station: document.getElementById("f-station").value.trim(),
+      walk: document.getElementById("f-walk").value,
+      openTime: document.getElementById("f-open").value,
+      closeTime: document.getElementById("f-close").value,
+      hoursNote: document.getElementById("f-hoursnote").value.trim(),
+      // closedDays: 月〜日ボタンで選んだ曜日の配列。.slice()でコピーを入れることで、
+      //             後でselectedDaysを空にしても、保存済みのこのentryの内容は影響を受けない
+      closedDays: selectedDays.slice(),
+      advance: document.getElementById("f-advance").value,
+      parking: document.getElementById("f-parking").value,
+      duration: document.getElementById("f-duration").value,
+      needsCheck: document.getElementById("f-needscheck").checked, // チェックボックスはcheckedでtrue/falseを取る
+      fee: feeOn,                                   // 入場料スイッチが今ONかOFFか
+      tickets: feeOn ? collectTickets() : [],        // ONの時だけ、入力されたチケット情報を集める。OFFなら空配列
+      feeNote: document.getElementById("f-feenote").value.trim(),
+      tags: selectedTags.slice(),                    // タグも同様にコピーして保存
+      home: document.getElementById("f-home").value.trim(),
+      image: document.getElementById("f-img").value.trim()
+    };
+
+    // ----- ③④⑤ 配列に追加して保存し、画面を更新する -----
+    spots.push(entry);     // spots配列の一番最後にentryを追加
+    saveSpots(spots);       // localStorageに今の状態をまるごと保存
+    renderList();            // 一覧表示を作り直す（新しいカードが増えた状態で再描画）
+    renderProgress();         // 件数が増えたので進捗バーも更新
+    showToast("담았어요! 현재 "+spots.length+"개"); // 「담았어요！現在〇〇個」のお知らせを出す
+
+    // ----- ⑥ フォームを初期状態にリセットして、次の入力に備える -----
+    form.reset();              // 入力欄(テキスト・プルダウン等)を全部空に戻す標準の命令
+    selectedDays = [];          // 選んでいた曜日の記録もクリア
+    selectedTags = [];           // 選んでいたタグの記録もクリア
+    feeOn = false;                // 入場料スイッチの状態もOFFに戻す
+    // ボタンの見た目(色がついた状態)も、全部まとめて.onクラスを外してリセット
+    document.querySelectorAll(".day-chip.on, .chip.on").forEach(c=>c.classList.remove("on"));
+    feeSwitch.classList.remove("on");
+    feeFields.classList.remove("show");
+    feeLabel.textContent = "무료";
+    resetTicketRows();           // チケット入力欄も空の1行だけに戻す
+    document.getElementById("f-name").focus(); // 次の入力がすぐできるよう、名前欄にカーソルを戻す
+  });
+
+  // ===== 1つの値を「CSVのルールに合った文字」に変換する関数 =====
+  // CSVはカンマ(,)で項目を区切る形式なので、値の中にカンマや改行、"が
+  // そのまま入っているとズレてしまう。それを防ぐための変換
+  function toCsvField(v){
+    const s = String(v==null ? "" : v); // null/undefinedは空文字に、それ以外は文字列に変換
+    // 値の中に " か , か 改行 が含まれていたら、全体を""で囲み、中の"は""に二重化する
+    // （これはExcelなどが使う標準的なCSVのルール）
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }
+  // ===== CSVエクスポート =====
+  // 保存したデータをExcelで開けるCSV（カンマ区切り）形式の文字列に変換して
+  // ファイルとしてダウンロードする
+  async function exportCsv(){
+    // 1件も保存されていない場合は、空のファイルを作る意味が無いので早めに終了
+    if(spots.length === 0){ showToast("내보낼 데이터가 없어요"); return; }
+
+    // headers: CSVの1行目（見出し行）。この並び順と、下のrowsで作る値の並び順を必ず揺らさないように揃える
+    const headers = ["이름","카테고리","place_id","소개","주소","지도링크","최근역","도보분","영업시작","영업종료","예외사항","휴무요일","사전예매개월","주차장","체류분","재확인필요","입장료유무","티켓종류별요금","연령비고","태그","홈페이지","이미지"];
+
+    // spots配列を1件ずつ「CSVの1行分の文字列」に変換していく
+    const rows = spots.map(s => {
+      // 複数あるチケット種類を、1つのセルの中に "라벨(성인1000/청소년800/...); 라벨2(...)" のように
+      // セミコロン(;)区切りでまとめて1つの文字列にする（CSVは1マスに1個の値しか入れられないため）
+      const ticketStr = (s.tickets||[]).map(t =>
+        (t.label||"기본")+"(성인"+(t.adult||"-")+"/청소년"+(t.teen||"-")+"/노인"+(t.senior||"-")+"/어린이"+(t.child||"-")+")"
+      ).join("; ");
+      // 配列の中に、headersと同じ順番で値を並べる
+      return [
+        s.name, s.category, s.placeId, s.desc, s.address, s.mapUrl, s.station, s.walk,
+        s.openTime, s.closeTime, s.hoursNote, (s.closedDays||[]).join("/"), s.advance, s.parking, s.duration,
+        s.needsCheck ? "Y":"N", s.fee ? "Y":"N", ticketStr, s.feeNote,
+        (s.tags||[]).join("/"), s.home, s.image
+      // .map(toCsvField) で各値をCSV用に安全な形に変換 → .join(",") でカンマ区切りの1行の文字列にする
+      ].map(toCsvField).join(",");
+    });
+
+    // 見出し行 + データの行たちを改行でつないで、CSVファイル全体の文字列を完成させる。
+    // 先頭の "﻿"（目には見えない文字、BOMといいます）は、Excelで開いた時に
+    // 韓国語・日本語の文字が文字化けしないようにするためのおまじないです
+    const csv = "﻿" + headers.join(",") + "\n" + rows.join("\n");
+    try{
+      // claude.use("downloads") : このページが「ファイルをダウンロードする機能」を使えるか確認して、
+      // 使えるならその機能(downloads)を受け取る。これはClaudeの公開ページ(artifact)の中だけで
+      // 使える特別な機能なので、普通にローカルファイルとして開いた場合は使えません
+      const downloads = await claude.use("downloads");
+      if(!downloads){ showToast("이 화면에서는 다운로드를 쓸 수 없어요"); return; }
+      // 実際にファイルを保存する。ファイル名と、中身の文字列(csv)を渡す
+      await downloads.save({ filename:"tabidori_spots.csv", data: csv });
+      showToast("CSV로 저장했어요");
+    }catch(err){
+      // ユーザーがダウンロードの確認ダイアログで「キャンセル」した場合は、
+      // エラーのお知らせを出さずに静かに終わる
+      if(err && err.code === "declined") return;
+      showToast("다운로드에 실패했어요");
+    }
+  }
+  // "CSV로 내보내기" ボタンが押されたら、上のexportCsv関数を実行する
+  document.getElementById("exportBtn").addEventListener("click", exportCsv);
+
+  // ===== ページが最初に開かれた時に、1回だけ実行する処理 =====
+  // localStorageに前回のデータが残っていれば、それをすぐ画面に反映させるために
+  // 一覧(renderList)と進捗バー(renderProgress)を1回描いておきます
+  renderList();
+  renderProgress();
+})();
+</script>
+</body>
+</html>
