@@ -9,17 +9,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
   /* ============================================================
-     ここから下はぜんぶ「見た目(デザイン)」専用のコード(CSS)。
-     HTMLの部品(ボタンとか入力欄とか)に、色や形、間隔を指定している！
-     JSみたいに「動く処理」はここには書かれていない！
+     ここから下はぜんぶ「見た目(デザイン)」専用のコードです(CSS)。
+     HTMLの部品(ボタンとか入力欄とか)に、色や形、間隔を指定しています。
+     JSみたいに「動く処理」はここには書かれていません。
      ============================================================ */
 
   /* ----- :root とは？ -----
-     ページ全体で使う「色の変数」をここでまとめて定義している。
+     ページ全体で使う「色の変数」をここでまとめて定義しています。
      例えば --paper は「紙みたいな背景色」という名前の変数で、
-     あとで background:var(--paper) のように呼び出して使う！
+     あとで background:var(--paper) のように呼び出して使います。
      変数化しておくと、色を変えたい時にここ1か所を直すだけで
-     ページ全体の色が一気に変わるので便利！！ */
+     ページ全体の色が一気に変わるので便利です。 */
   :root{
     --paper:#FFF9F2;
     --paper-raised:#FFFFFF;
@@ -44,10 +44,10 @@
   }
   /* ----- ダークモード対応 -----
      スマホやPCの設定が「ダークモード(黒っぽい画面)」になっている時、
-     ブラウザが自動でこの中の色に切り替えてくれる！
-     上の:rootで決めた色の「ダークモード版」をここで上書きしている。
+     ブラウザが自動でこの中の色に切り替えてくれます。
+     上の:rootで決めた色の「ダークモード版」をここで上書きしています。
      (ユーザーが手動で data-theme="light" を指定した場合はこれを無視する、
-      という意味が :not([data-theme="light"])　) */
+      という意味が :not([data-theme="light"]) です) */
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
       --paper:#211A15;
@@ -71,9 +71,9 @@
   }
   /* ----- こっちは「手動で」ダークモードに切り替えた時用 -----
      上のはOS設定にまかせるパターン、これはJSで
-     document要素に data-theme="dark" をつけた時に効くパターン！
-     (今回のフォームではボタンで切り替える機能はまだ無いが、
-      将来そういうボタンを作る時のために両方用意されている) */
+     document要素に data-theme="dark" をつけた時に効くパターンです。
+     (今回のフォームではボタンで切り替える機能はまだ無いですが、
+      将来そういうボタンを作る時のために両方用意されています) */
   :root[data-theme="dark"]{
     --paper:#211A15;
     --paper-raised:#2B2219;
@@ -93,14 +93,14 @@
     --danger:#F0675C;
     --danger-tint:#3A1F1C;
   }
-  /* * はページの「全部の要素」を選ぶ記号
+  /* * はページの「全部の要素」を選ぶ記号です。
      box-sizing:border-box は「paddingやborderを幅の中に含める」設定で、
-     これを指定しておくとレイアウト崩れが起きにくくなる(おまじない的な設定)。 */
+     これを指定しておくとレイアウト崩れが起きにくくなります(おまじない的な設定)。 */
   *{box-sizing:border-box;}
   html,body{height:100%;}
   body{
     margin:0;
-    /* 背景に小さい水玉(ドット)模様を敷いている！
+    /* 背景に小さい水玉(ドット)模様を敷いています。
        radial-gradientで「丸い点」を作り、background-sizeで
        点と点の間隔(22px四方)を決めています。旅の地図っぽい雰囲気用。 */
     background:
@@ -122,7 +122,7 @@
 
   /* ============================================================
      ヘッダー部分（スーツケースの荷物タグ風デザイン）
-     ページの一番上にある、タイトルと進捗バーが入った緑色のタグ！
+     ページの一番上にある、タイトルと進捗バーが入った緑色のタグです。
      ============================================================ */
   .tag{
     position:relative;
@@ -134,8 +134,8 @@
     box-shadow:0 2px 0 #6E8F2E;
   }
   /* .tag::before / ::after は「タグに穴とミシン目線を描く」ための
-     見えない飾りパーツ！HTMLには書かれていない、CSSだけで
-     追加される架空の要素(擬似要素)なので、HTML側を探しても出てこない。
+     見えない飾りパーツです。HTMLには書かれていない、CSSだけで
+     追加される架空の要素(擬似要素)なので、HTML側を探しても出てきません。
      ::before = タグの穴（丸いリング）を描く */
   .tag::before{
     content:"";
@@ -191,7 +191,7 @@
     transition:width .3s ease;
   }
   /* .route-pin = バーの上をスライドして動く「地図ピン」のアイコン。
-     left の値(%)をJS側で変えることで、左右にスルスル移動する！ */
+     left の値(%)をJS側で変えることで、左右にスルスル移動します */
   .route-pin{
     position:absolute;
     top:50%;
@@ -209,7 +209,7 @@
 
   /* ============================================================
      ポストカード風の入力フォーム本体
-     入力フォーム全体を「はがき」のような見た目のカードに入れている！
+     入力フォーム全体を「はがき」のような見た目のカードに入れています。
      ============================================================ */
   .postcard{
     position:relative;
@@ -221,7 +221,7 @@
     overflow:hidden;
   }
   /* .tape = ポストカードの左上に貼ってある「マスキングテープ」っぽい飾り。
-     repeating-linear-gradientで斜めストライプ模様を作っている！ */
+     repeating-linear-gradientで斜めストライプ模様を作っています */
   .tape{
     position:absolute;
     top:-8px;
@@ -261,7 +261,7 @@
   }
 
   /* .grid = 入力欄を「2列」に並べるための設定。
-     .field.full をつけた項目だけは1行まるごと(2列分)使う！ */
+     .field.full をつけた項目だけは1行まるごと(2列分)使います */
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .field{display:flex;flex-direction:column;gap:5px;}
   .field.full{grid-column:1/-1;}
@@ -288,9 +288,9 @@
   }
 
   /* ----- 定休日ボタン（月・火・水…の丸いボタン） -----
-     押すと色がつく・もう一回押すと元に戻る「トグルボタン
-     .on というクラスがついているかどうかで見た目が変わる
-     （実際にON/OFFを切り替える処理はJS側にある） */
+     押すと色がつく・もう一回押すと元に戻る「トグルボタン」です。
+     .on というクラスがついているかどうかで見た目が変わります
+     （実際にON/OFFを切り替える処理はJS側にあります） */
   .day-row{display:flex;gap:6px;flex-wrap:wrap;}
   .day-chip{
     width:40px;height:40px;
@@ -310,8 +310,8 @@
   }
 
   /* ----- 入場料の「有料/無料」切り替えスイッチ -----
-     スマホの設定画面にあるような丸いON/OFFスイッチの見た目
-     .switch.on がついている時だけ、丸いつまみが右に移動する */
+     スマホの設定画面にあるような丸いON/OFFスイッチの見た目です。
+     .switch.on がついている時だけ、丸いつまみが右に移動します */
   .switch-row{
     display:flex;align-items:center;gap:10px;
     margin-bottom:4px;
@@ -343,7 +343,7 @@
   }
   .fee-fields.show{display:block;}
   /* .ticket-row = 「チケット種類」1件分(平日券・休日券など)の入力欄をまとめた箱。
-     JSの addTicketRow() 関数が、押すたびにこの箱をコピーして増やしていく！ */
+     JSの addTicketRow() 関数が、押すたびにこの箱をコピーして増やしていきます */
   .ticket-row{
     position:relative;
     background:var(--sand);
@@ -367,8 +367,8 @@
   }
 
   /* ----- 太ったピル型の「タグ」ボタン（야경・전망좋음 など） -----
-     定休日ボタンと同じ「押すとON/OFFが切り替わる」仕組み
-     色がついた(.on)タグだけが、最終的に保存される時に選ばれる */
+     定休日ボタンと同じ「押すとON/OFFが切り替わる」仕組みです。
+     色がついた(.on)タグだけが、最終的に保存される時に選ばれます */
   .tag-group{margin-bottom:14px;}
   .tag-group-label{
     font-size:0.78rem;
@@ -418,7 +418,7 @@
 
   /* ============================================================
      保存済みスポット一覧（下に表示される「チケット風カード」たち）
-     フォームを送信すると、ここに1件ずつカードが追加されていく。
+     フォームを送信すると、ここに1件ずつカードが追加されていきます。
      ============================================================ */
   .list-head{display:flex;align-items:center;gap:8px;margin:0 0 14px 4px;}
   .list-head h2{
@@ -434,7 +434,7 @@
   }
   /* .ticket = 1件のスポットを表す「チケット」カード本体。
      中が左右2つに分かれていて、左(.ticket-main)に情報、
-     右(.ticket-stub)に削除ボタンが入っている「もぎり」デザイン */
+     右(.ticket-stub)に削除ボタンが入っている「もぎり」デザインです */
   .ticket{
     position:relative;
     display:flex;
@@ -488,8 +488,8 @@
   }
 
   /* .toast = 「담았어요!」みたいに画面下にポッと一瞬出るお知らせ。
-     .show クラスがついた時だけ opacity:1 になってフワッと表示される
-     （JSのshowToast()関数が、このクラスを付けたり消したりしている） */
+     .show クラスがついた時だけ opacity:1 になってフワッと表示されます
+     （JSのshowToast()関数が、このクラスを付けたり消したりしています） */
   .toast{
     position:fixed;left:50%;bottom:24px;
     transform:translateX(-50%) translateY(20px);
@@ -534,7 +534,7 @@
           <input type="text" id="f-name" placeholder="예: 돈키호테 신주쿠점" required>
         </div>
         <div class="field">
-          <label for="f-cat">카테고리</label>
+          <label for="f-cat">카테고리 (선택)</label>
           <select id="f-cat">
             <option value="관광지">관광지</option>
             <option value="맛집">맛집</option>
@@ -549,7 +549,7 @@
           <input type="text" id="f-place" placeholder="구글맵에 있으면 입력">
         </div>
         <div class="field full">
-          <label for="f-desc">한줄 소개</label>
+          <label for="f-desc">한줄 소개 (선택)</label>
           <textarea id="f-desc" placeholder="이 장소가 어떤 곳인지 1~2문장으로"></textarea>
         </div>
       </div>
@@ -562,10 +562,20 @@
           <label for="f-addr">주소</label>
           <input type="text" id="f-addr" placeholder="예: 도쿄도 신주쿠구 ...">
         </div>
-        <div class="field full">
-          <label for="f-map">지도 링크 (또는 위도,경도)</label>
-          <input type="text" id="f-map" placeholder="https://maps.google.com/...">
+        <div class="field">
+          <label class="req" for="f-area">지역(에어리어)</label>
+          <input type="text" id="f-area" placeholder="예: 신주쿠, 아사쿠사, 교토">
         </div>
+        <div class="field"></div>
+        <div class="field">
+          <label class="req" for="f-lat">위도 (latitude)</label>
+          <input type="number" id="f-lat" step="any" placeholder="예: 35.6938">
+        </div>
+        <div class="field">
+          <label class="req" for="f-lng">경도 (longitude)</label>
+          <input type="number" id="f-lng" step="any" placeholder="예: 139.7034">
+        </div>
+        <p class="hint" style="grid-column:1/-1;margin-top:-4px;">구글맵에서 장소를 우클릭하면 맨 위에 위도,경도 숫자가 떠요. 그걸 복사해서 넣으면 돼요.</p>
         <div class="field">
           <label for="f-station">가장 가까운 역</label>
           <input type="text" id="f-station" placeholder="예: 신주쿠역">
@@ -639,6 +649,7 @@
       <div class="fee-fields" id="feeFields">
         <div id="ticketRows"></div>
         <button type="button" class="btn-ghost btn-small" id="addTicketBtn">+ 티켓 종류 추가</button>
+        <!-- 10/16: 한번 티켓 1개마다로 옮겨봤는데, 입력 부담이 커서 다시 스팟 전체 1개로 원복함 -->
         <div class="grid" style="margin-top:14px;">
           <div class="field full">
             <label for="f-feenote">연령 기준 비고</label>
@@ -701,6 +712,11 @@
           <label for="f-img">대표 이미지 URL</label>
           <input type="url" id="f-img" placeholder="https://...">
         </div>
+        <div class="field full">
+          <label for="f-imgcredit">이미지 출처 / 저작권자</label>
+          <input type="text" id="f-imgcredit" placeholder="예: 공식 홈페이지, ○○관광청, 직접 촬영">
+        </div>
+        <p class="hint" style="grid-column:1/-1;margin:-6px 0 0;">⚠️ 구글 이미지 검색 결과는 저작권 때문에 쓰면 안 돼요. 공식 홈페이지/보도자료/직접 촬영 사진만 사용해주세요.</p>
       </div>
     </div>
 
@@ -721,20 +737,20 @@
 
 <script>
 /* ============================================================
-   ここから下がJavaScript（画面を「動かす」部分）
-   CSSは見た目だけだったが、JSは
+   ここから下がJavaScript（画面を「動かす」部分）です。
+   CSSは見た目だけでしたが、JSは
    「ボタンを押したら〇〇する」「入力されたデータを保存する」
-   のような“動き”を担当している。
+   のような“動き”を担当しています。
 
    (function(){ ... })();  という形は「無名関数を今すぐ実行する」という
-   おまじないのような書き方で、IIFE（即時実行関数）と呼ばれる！
-   これで囲むことで、中で作った変数が外のコードとぶつからないようにしている。
+   おまじないのような書き方で、IIFE（即時実行関数）と呼ばれます。
+   これで囲むことで、中で作った変数が外のコードとぶつからないようにしています。
    ============================================================ */
 (function(){
   // ===== データの保存先 =====
   // localStorage: このブラウザの中だけにデータを保存する小さな保管場所
   // サーバーではないので、別のパソコン・ブラウザには引き継がれない
-  const STORAGE_KEY = "tabidori_spots_v4";
+  const STORAGE_KEY = "tabidori_spots_v7"; // 10/16: 연령기준비고를 다시 스팟 레벨로 원복해서 v7로 올림
   const GOAL = 60; // 目標のスポット数
 
   // 保存されているデータを読み込む（なければ空の配列）
@@ -761,7 +777,7 @@
   let feeOn = false;
 
   // document.getElementById("〇〇") は、HTML側で id="〇〇" と書いた部品を
-  // JSから取ってきて変数に入れる、という意味。以後この変数越しに操作する。
+  // JSから取ってきて変数に入れる、という意味です。以後この変数越しに操作します。
   const listArea = document.getElementById("listArea");   // 保存済みスポット一覧を表示するエリア
   const toastEl = document.getElementById("toast");         // 下に出るお知らせのボックス
   const routeFill = document.getElementById("routeFill");   // 進捗バーの緑色の部分
@@ -771,7 +787,7 @@
   // ===== 文字をそのままHTMLに埋め込むと危険な記号(<,>など)を無害な文字に変換する関数 =====
   // 例えばユーザーが名前に <script> みたいな文字を入れても、
   // そのままHTMLに差し込むと変な動きをしてしまう可能性があるため、
-  // &lt; のような「文字実体参照」に変換して安全に表示できるようにしている。
+  // &lt; のような「文字実体参照」に変換して安全に表示できるようにしています。
   function escapeHtml(s){
     // s || "" : sが未入力(undefined/null)だったら空文字にする
     // .replace(正規表現, 関数) : 対象の記号を見つけるたびに、対応する安全な文字に置き換える
@@ -786,7 +802,7 @@
   }
 
   // ===== 「今何件集まったか」の進捗バーを更新する関数 =====
-  // 保存件数を変える操作（追加・削除）のたびに毎回呼び出している
+  // 保存件数を変える操作（追加・削除）のたびに毎回呼び出しています
   function renderProgress(){
     // 達成率(%)を計算。100を超えないように Math.min(100, ...) でストッパーをかけている
     const pct = Math.min(100, Math.round((spots.length/GOAL)*100));
@@ -798,7 +814,7 @@
   // ===== 保存したスポット一覧を画面に描く =====
   // spots配列を1件ずつチケット風のカードHTMLに変換して、全部つなげて表示する
   // JSでは「HTMLの文字列」を自分で組み立てて innerHTML に入れることで、
-  // 画面に新しい部品を表示する、というやり方をよく使う。
+  // 画面に新しい部品を表示する、というやり方をよく使います。
   function renderList(){
     // まだ1件も保存されていない時は「空っぽメッセージ」だけ出して終了
     if(spots.length === 0){
@@ -811,14 +827,20 @@
     listArea.innerHTML = spots.slice().reverse().map(s => {
       // 画像URLが入力されていれば<img>タグを作る。無ければ空文字（＝何も表示しない）
       // onerror="..." は、画像の読み込みに失敗した時(リンク切れなど)に
-      // 自動で非表示にする保険の処理
+      // 自動で非表示にする保険の処理です
       const img = s.image ? '<img class="ticket-img" src="'+escapeHtml(s.image)+'" alt="" onerror="this.style.display=\'none\'">' : "";
 
       // rows: カードの中に表示する「情報の行」を1つずつ追加していく配列
       // 値が入力されている項目だけ rows.push(...) で追加するので、
-      // 空欄の項目はカードに表示されない仕組みになっている
+      // 空欄の項目はカードに表示されない仕組みになっています
       const rows = [];
-      if(s.address) rows.push('<span><b>주소</b> '+escapeHtml(s.address)+'</span>');
+      if(s.address) rows.push('<span><b>주소</b> '+escapeHtml(s.address)+(s.area?' ('+escapeHtml(s.area)+')':'')+'</span>');
+      // 위도/경도가 둘 다 있으면, 그 자리에서 구글맵 링크를 바로 만들어서 보여준다.
+      // (map_url을 따로 저장 안 하고, lat/lng으로부터 즉석에서 링크를 조립하는 방식)
+      if(s.lat && s.lng){
+        const mapLink = "https://www.google.com/maps?q="+encodeURIComponent(s.lat)+","+encodeURIComponent(s.lng);
+        rows.push('<span><b>지도</b> <a href="'+mapLink+'" target="_blank" rel="noopener">구글맵에서 보기</a></span>');
+      }
       if(s.station) rows.push('<span><b>역</b> '+escapeHtml(s.station)+(s.walk?' · 도보 '+escapeHtml(s.walk)+'분':'')+'</span>');
       if(s.openTime || s.closeTime) rows.push('<span><b>시간</b> '+escapeHtml(s.openTime||'?')+' ~ '+escapeHtml(s.closeTime||'?')+'</span>');
       if(s.closedDays && s.closedDays.length) rows.push('<span><b>휴무</b> '+s.closedDays.join(', ')+'</span>');
@@ -838,6 +860,7 @@
       // 「정보 재확인 필요」にチェックが入っていたら、赤文字の注意書きを追加
       if(s.needsCheck) rows.push('<span style="color:var(--danger)">⚠ 정보 재확인 필요</span>');
       if(s.home) rows.push('<span><b>홈페이지</b> <a href="'+escapeHtml(s.home)+'" target="_blank" rel="noopener">열기</a></span>');
+      if(s.imageCredit) rows.push('<span><b>이미지 출처</b> '+escapeHtml(s.imageCredit)+'</span>');
       // タグ(야경・포토스팟など)を、ひとつずつ小さいシール風のHTMLに変換して連結
       const tags = (s.tags||[]).map(t=>'<span class="sticker">'+escapeHtml(t)+'</span>').join("");
 
@@ -861,7 +884,7 @@
 
     // 今画面に表示されている「削除(✕)」ボタン全部に、1つずつクリックイベントを付ける
     // （カードは毎回まるごと作り直されるので、このイベント設定もrenderList()が呼ばれるたびに
-    //   最初からやり直している、という点がポイント）
+    //   最初からやり直している、という点がポイントです）
     listArea.querySelectorAll("[data-del]").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         const id = btn.getAttribute("data-del"); // どのカードの削除ボタンか、IDを取得
@@ -878,7 +901,7 @@
   // ===== 定休日ボタン（トグル方式） =====
   // クリックするたびに「選択済みなら外す／未選択なら入れる」を繰り返すだけのシンプルな仕組み
   // document.querySelectorAll(".day-chip") で、月〜日の7つのボタンを全部まとめて取得し、
-  // forEach で1つずつ同じ処理（クリックイベントの設定）を付けていく
+  // forEach で1つずつ同じ処理（クリックイベントの設定）を付けていきます
   document.querySelectorAll(".day-chip").forEach(chip=>{
     chip.addEventListener("click", ()=>{
       // HTML側に書いた data-day="월" のような値を取り出す
@@ -897,7 +920,7 @@
 
   // ===== タグボタン（曜日ボタンと同じトグル方式） =====
   // 「분위기·뷰」「계절·이벤트」など4グループ分のタグボタンを、
-  // グループに関係なく全部まとめて1回で処理している
+  // グループに関係なく全部まとめて1回で処理しています
   document.querySelectorAll('.chip-row[data-group="tags"] .chip').forEach(chip=>{
     chip.addEventListener("click", ()=>{
       const val = chip.textContent; // ボタンに書かれている文字そのもの（例:"야경"）をタグの値として使う
@@ -920,8 +943,8 @@
 
   // 「＋ チケット種類を追加」ボタンを押すたびに、この関数で入力欄のまとまりを
   // ひとつ新しく作って画面に追加する（平日券・休日券など複数チケット対応）
-  // data を渡した場合は、その値を最初から入力欄にセットしておく（今回は空のまま呼ぶだけだが、
-  // 将来「編集機能」を作る時に既存データを入れ直せるように用意されている）
+  // data を渡した場合は、その値を最初から入力欄にセットしておく（今回は空のまま呼ぶだけですが、
+  // 将来「編集機能」を作る時に既存データを入れ直せるように用意されています）
   function addTicketRow(data){
     data = data || {}; // dataが渡されなかった場合は空オブジェクトにしておく（エラー防止）
 
@@ -963,7 +986,7 @@
     addTicketRow();            // 空の行を1つだけ新しく作る
   }
   // ===== 画面に出ているすべてのチケット入力欄を集めて、配列（リスト）にまとめる関数 =====
-  // フォーム送信時に呼ばれて「結局何種類のチケットが入力されたか」をまとめて取得する
+  // フォーム送信時に呼ばれて「結局何種類のチケットが入力されたか」をまとめて取得します
   function collectTickets(){
     // Array.from(...) : querySelectorAllの結果(特殊な形)を、ふつうの配列に変換する
     // .map(row => ({...})) : 行(row)1つずつから、各入力欄の値を取り出してオブジェクトに変換
@@ -1019,7 +1042,7 @@
     formError.style.display = "none"; // チェックを通ったので、前回出ていたエラー文は隠す
 
     // ----- ② 画面の各入力欄から値を取り出して、1つのオブジェクトにまとめる -----
-    // document.getElementById("f-〇〇").value で、その入力欄に今入っている文字を取得できる
+    // document.getElementById("f-〇〇").value で、その入力欄に今入っている文字を取得できます
     const entry = {
       // id: 他のスポットと絶対に被らない識別用の文字列を作る。
       //     今この瞬間の時刻(Date.now())＋ランダムな文字をくっつけることで、
@@ -1030,7 +1053,9 @@
       placeId: document.getElementById("f-place").value.trim(),
       desc: document.getElementById("f-desc").value.trim(),
       address: document.getElementById("f-addr").value.trim(),
-      mapUrl: document.getElementById("f-map").value.trim(),
+      area: document.getElementById("f-area").value.trim(),       // 10/15 추가: 지역명(교토/아사쿠사 등)
+      lat: document.getElementById("f-lat").value,                  // 10/15 추가: 위도 (map_url 대신)
+      lng: document.getElementById("f-lng").value,                  // 10/15 추가: 경도 (map_url 대신)
       station: document.getElementById("f-station").value.trim(),
       walk: document.getElementById("f-walk").value,
       openTime: document.getElementById("f-open").value,
@@ -1045,10 +1070,11 @@
       needsCheck: document.getElementById("f-needscheck").checked, // チェックボックスはcheckedでtrue/falseを取る
       fee: feeOn,                                   // 入場料スイッチが今ONかOFFか
       tickets: feeOn ? collectTickets() : [],        // ONの時だけ、入力されたチケット情報を集める。OFFなら空配列
-      feeNote: document.getElementById("f-feenote").value.trim(),
+      feeNote: document.getElementById("f-feenote").value.trim(), // 연령 기준 비고（10/16: 스팟 전체 1개로 원복）
       tags: selectedTags.slice(),                    // タグも同様にコピーして保存
       home: document.getElementById("f-home").value.trim(),
-      image: document.getElementById("f-img").value.trim()
+      image: document.getElementById("f-img").value.trim(),
+      imageCredit: document.getElementById("f-imgcredit").value.trim() // 10/15 추가: 이미지 출처/저작권자
     };
 
     // ----- ③④⑤ 配列に追加して保存し、画面を更新する -----
@@ -1074,11 +1100,11 @@
 
   // ===== 1つの値を「CSVのルールに合った文字」に変換する関数 =====
   // CSVはカンマ(,)で項目を区切る形式なので、値の中にカンマや改行、"が
-  // そのまま入っているとズレてしまう。それを防ぐための変換
+  // そのまま入っているとズレてしまいます。それを防ぐための変換です。
   function toCsvField(v){
     const s = String(v==null ? "" : v); // null/undefinedは空文字に、それ以外は文字列に変換
     // 値の中に " か , か 改行 が含まれていたら、全体を""で囲み、中の"は""に二重化する
-    // （これはExcelなどが使う標準的なCSVのルール）
+    // （これはExcelなどが使う標準的なCSVのルールです）
     return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
   }
   // ===== CSVエクスポート =====
@@ -1089,7 +1115,8 @@
     if(spots.length === 0){ showToast("내보낼 데이터가 없어요"); return; }
 
     // headers: CSVの1行目（見出し行）。この並び順と、下のrowsで作る値の並び順を必ず揺らさないように揃える
-    const headers = ["이름","카테고리","place_id","소개","주소","지도링크","최근역","도보분","영업시작","영업종료","예외사항","휴무요일","사전예매개월","주차장","체류분","재확인필요","입장료유무","티켓종류별요금","연령비고","태그","홈페이지","이미지"];
+    // 10/16: 티켓마다로 옮겼다가, 입력부담 커서 다시 스팟 전체 1개(연령비고 열)로 원복함
+    const headers = ["이름","카테고리","place_id","소개","주소","지역","위도","경도","최근역","도보분","영업시작","영업종료","예외사항","휴무요일","사전예매개월","주차장","체류분","재확인필요","입장료유무","티켓종류별요금","연령비고","태그","홈페이지","이미지","이미지출처"];
 
     // spots配列を1件ずつ「CSVの1行分の文字列」に変換していく
     const rows = spots.map(s => {
@@ -1100,10 +1127,10 @@
       ).join("; ");
       // 配列の中に、headersと同じ順番で値を並べる
       return [
-        s.name, s.category, s.placeId, s.desc, s.address, s.mapUrl, s.station, s.walk,
+        s.name, s.category, s.placeId, s.desc, s.address, s.area, s.lat, s.lng, s.station, s.walk,
         s.openTime, s.closeTime, s.hoursNote, (s.closedDays||[]).join("/"), s.advance, s.parking, s.duration,
         s.needsCheck ? "Y":"N", s.fee ? "Y":"N", ticketStr, s.feeNote,
-        (s.tags||[]).join("/"), s.home, s.image
+        (s.tags||[]).join("/"), s.home, s.image, s.imageCredit
       // .map(toCsvField) で各値をCSV用に安全な形に変換 → .join(",") でカンマ区切りの1行の文字列にする
       ].map(toCsvField).join(",");
     });
