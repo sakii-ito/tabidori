@@ -999,6 +999,8 @@
         '<div class="field"><label>청소년</label><input type="number" class="t-teen" min="0" placeholder="円"></div>' +
         '<div class="field"><label>노인</label><input type="number" class="t-senior" min="0" placeholder="円"></div>' +
         '<div class="field"><label>어린이</label><input type="number" class="t-child" min="0" placeholder="円"></div>' +
+        // 10/24追加: 이 티켓만의 이용가능 시간대/구역 제한 등을 적는 선택 메모칸
+        '<div class="field full"><label>이용 제한 메모 (선택)</label><input type="text" class="t-note" placeholder="예: 16:00 이후 입장 가능 / 아쿠아뮤지엄・우미팜만 이용 가능"></div>' +
       '</div>';
     // ④ data(もし値があれば)の内容を、作った入力欄に流し込む。無ければ空文字("")のまま
     row.querySelector(".t-label").value = data.label || "";
@@ -1006,6 +1008,7 @@
     row.querySelector(".t-teen").value = data.teen || "";
     row.querySelector(".t-senior").value = data.senior || "";
     row.querySelector(".t-child").value = data.child || "";
+    row.querySelector(".t-note").value = data.note || ""; // 10/24追加
     // ⑤ このチケット行専用の削除(✕)ボタンにクリック処理を付ける
     row.querySelector(".ticket-row-remove").addEventListener("click", ()=>{
       row.remove(); // この行だけを画面から取り除く
@@ -1031,9 +1034,10 @@
       adult: row.querySelector(".t-adult").value,
       teen: row.querySelector(".t-teen").value,
       senior: row.querySelector(".t-senior").value,
-      child: row.querySelector(".t-child").value
+      child: row.querySelector(".t-child").value,
+      note: row.querySelector(".t-note").value.trim() // 10/24追加: 이용 제한 메모
     // .filter(...) : 名前も金額も全部空っぽの行(何も入力されていない行)は結果から除外する
-    })).filter(t => t.label || t.adult || t.teen || t.senior || t.child);
+    })).filter(t => t.label || t.adult || t.teen || t.senior || t.child || t.note);
   }
   addTicketBtn.addEventListener("click", ()=>addTicketRow()); // ボタンを押したら新しい行を1つ追加
 
@@ -1276,8 +1280,9 @@
     const rows = spots.map(s => {
       // 複数あるチケット種類を、1つのセルの中に "라벨(성인1000/청소년800/...); 라벨2(...)" のように
       // セミコロン(;)区切りでまとめて1つの文字列にする（CSVは1マスに1個の値しか入れられないため）
+      // 10/24追加: 티켓마다 이용 제한 메모(t.note)가 있으면 "/메모:..."로 같이 이어붙인다
       const ticketStr = (s.tickets||[]).map(t =>
-        (t.label||"기본")+"(성인"+(t.adult||"-")+"/청소년"+(t.teen||"-")+"/노인"+(t.senior||"-")+"/어린이"+(t.child||"-")+")"
+        (t.label||"기본")+"(성인"+(t.adult||"-")+"/청소년"+(t.teen||"-")+"/노인"+(t.senior||"-")+"/어린이"+(t.child||"-")+(t.note ? "/메모:"+t.note : "")+")"
       ).join("; ");
       // 配列の中に、headersと同じ順番で値を並べる
       return [
