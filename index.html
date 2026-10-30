@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&display=swap" rel="stylesheet">
+<!-- 10/30追加: sql.js(SQLiteをブラウザの中だけで動かすライブラリ)。
+     本物の.sqliteファイルとして保存・読み込みするために使う -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
 <style>
   /* ============================================================
      ここから下はぜんぶ「見た目(デザイン)」専用のコードだ(CSS)。
@@ -740,6 +743,10 @@
       <!-- 10/23추가: 수정 모드일 때만 보이는 취소 버튼 -->
       <button type="button" class="btn-ghost" id="cancelEditBtn" style="display:none;">취소</button>
       <button type="button" class="btn-ghost" id="exportBtn">CSV로 내보내기</button>
+      <!-- 10/30追加: 팀 공유용 CSV랑 별개로, 진짜 DB 파일(SQLite)로 저장/불러오기 -->
+      <button type="button" class="btn-ghost" id="exportDbBtn">🗄️ SQLite로 저장</button>
+      <button type="button" class="btn-ghost" id="importDbBtn">🗄️ SQLite 불러오기</button>
+      <input type="file" id="importDbInput" accept=".sqlite,.db" style="display:none;">
     </div>
   </form>
 
@@ -1300,19 +1307,37 @@
     // 先頭の "﻿"（目には見えない文字、BOMという）は、Excelで開いた時に
     // 韓国語・日本語の文字が文字化けしないようにするためのおまじないだ
     const csv = "﻿" + headers.join(",") + "\n" + rows.join("\n");
+    // 10/23追加: ファイル名に日付を入れて、前に出したCSVを上書きしないようにする
+    // 例: 2026-10-29 → "20261029"
+    const today = new Date();
+    const pad2 = n => String(n).padStart(2, "0"); // 1桁の数字の前に0を付ける（9→09）
+    const dateStr = today.getFullYear() + pad2(today.getMonth()+1) + pad2(today.getDate());
+    const filename = "tabidori_spots_"+dateStr+".csv";
     try{
-      // claude.use("downloads") : このページが「ファイルをダウンロードする機能」を使えるか確認して、
-      // 使えるならその機能(downloads)を受け取る。これはClaudeの公開ページ(artifact)の中だけで
-      // 使える特別な機能なので、普通にローカルファイルとして開いた場合は使えない
+      // 10/29修正: ローカルファイル(index.htmlをダブルクリックで開いた場合)と
+      // Claude Artifact(claude.ai上の公開ページ)とでは、ダウンロードの仕組みが違う。
+      // ・ローカル → 普通のブラウザなので、Blob+<a download>という標準のやり方でそのままダウンロードできる
+      // ・Artifact → ページがサンドボックス(制限された箱)の中にあるので、標準のやり方が使えず、
+      //              claude.use("downloads")という特別な橋渡し機能が必要
+      // typeof claude === "undefined" かどうかで、今どっちの環境にいるか判定して分岐する
+      if(typeof claude === "undefined"){
+        // ----- ローカルファイルの場合: ブラウザ標準のダウンロード方法 -----
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob); // Blob(データのかたまり)に、一時的な仮のURLを発行する
+        const a = document.createElement("a"); // 見えない<a>タグ(リンク)を1つ作って
+        a.href = url;
+        a.download = filename; // download属性をつけると、クリックした時にページ遷移じゃなくファイル保存になる
+        document.body.appendChild(a);
+        a.click();              // 自動でクリックしたことにして、ダウンロードを発生させる
+        document.body.removeChild(a); // 使い終わった見えないリンクは掃除する
+        URL.revokeObjectURL(url);     // 仮のURLも後片付け
+        showToast("CSV로 저장했어요");
+        return;
+      }
+      // ----- Claude Artifactの場合: 特別な橋渡し機能を使う -----
       const downloads = await claude.use("downloads");
       if(!downloads){ showToast("이 화면에서는 다운로드를 쓸 수 없어요"); return; }
-      // 10/23追加: ファイル名に日付を入れて、前に出したCSVを上書きしないようにする
-      // 例: 2026-10-23 → "20261023"
-      const today = new Date();
-      const pad2 = n => String(n).padStart(2, "0"); // 1桁の数字の前に0を付ける（9→09）
-      const dateStr = today.getFullYear() + pad2(today.getMonth()+1) + pad2(today.getDate());
-      // 実際にファイルを保存する。ファイル名と、中身の文字列(csv)を渡す
-      await downloads.save({ filename:"tabidori_spots_"+dateStr+".csv", data: csv });
+      await downloads.save({ filename: filename, data: csv });
       showToast("CSV로 저장했어요");
     }catch(err){
       // ユーザーがダウンロードの確認ダイアログで「キャンセル」した場合は、
@@ -1323,6 +1348,152 @@
   }
   // "CSV로 내보내기" ボタンが押されたら、上のexportCsv関数を実行する
   document.getElementById("exportBtn").addEventListener("click", exportCsv);
+
+  // ============================================================
+  // 10/30追加: SQLiteファイルとして保存・読み込みする機能
+  // CSVは「見るだけ」の表だが、こっちは本物のデータベースファイル(.sqlite)。
+  // DB Browser for SQLiteみたいなツールで直接開けるし、팀원한테 공유하기도 좋다。
+  // ============================================================
+
+  let SQL = null; // sql.jsの本体。最初に使う時に1回だけ読み込んで、ここに覚えておく(毎回読み込むと遅いから)
+  async function getSQL(){
+    if(!SQL){
+      // initSqlJs: ライブラリ本体(sql-wasm.js)とは別に、実際の計算をするsql-wasm.wasmという
+      // ファイルも必要なので、それをどこから取ってくるか(locateFile)を教えてあげる
+      SQL = await initSqlJs({
+        locateFile: file => "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/" + file
+      });
+    }
+    return SQL;
+  }
+
+  // ----- 保存: 今のspots配列を、ERD通りの2つの表(curation_spots / admission_tickets)に
+  //            組み立て直して、1個の.sqliteファイルとしてダウンロードする -----
+  async function exportDb(){
+    if(spots.length === 0){ showToast("내보낼 데이터가 없어요"); return; }
+    try{
+      const SQLmod = await getSQL();
+      const db = new SQLmod.Database();
+      // CURATION_SPOTS 표(ERD v10과 동일한 구조)
+      db.run(
+        "CREATE TABLE curation_spots (" +
+        "id TEXT PRIMARY KEY, name TEXT, category TEXT, description TEXT, address TEXT, area TEXT, " +
+        "latitude TEXT, longitude TEXT, nearest_station TEXT, walk_minutes TEXT, " +
+        "open_time TEXT, close_time TEXT, hours_note TEXT, closed_days TEXT, " +
+        "advance_booking_known INTEGER, advance_booking_months TEXT, " +
+        "parking TEXT, duration TEXT, needs_check INTEGER, " +
+        "admission_fee INTEGER, admission_note TEXT, tags TEXT, " +
+        "homepage_url TEXT, image_url TEXT, image_credit TEXT)"
+      );
+      // ADMISSION_TICKETS 표
+      db.run(
+        "CREATE TABLE admission_tickets (" +
+        "id TEXT PRIMARY KEY, spot_id TEXT, label TEXT, " +
+        "price_adult TEXT, price_teen TEXT, price_senior TEXT, price_child TEXT, ticket_note TEXT)"
+      );
+      const insertSpot = db.prepare(
+        "INSERT INTO curation_spots VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+      );
+      const insertTicket = db.prepare(
+        "INSERT INTO admission_tickets VALUES (?,?,?,?,?,?,?,?)"
+      );
+      spots.forEach(s=>{
+        insertSpot.run([
+          String(s.id), s.name||"", s.category||"", s.desc||"", s.address||"", s.area||"",
+          s.lat||"", s.lng||"", s.station||"", s.walk||"",
+          s.openTime||"", s.closeTime||"", s.hoursNote||"", (s.closedDays||[]).join("/"),
+          s.advanceKnown?1:0, s.advance||"",
+          s.parking||"", s.duration||"", s.needsCheck?1:0,
+          s.fee?1:0, s.feeNote||"", (s.tags||[]).join("/"),
+          s.home||"", s.image||"", s.imageCredit||""
+        ]);
+        (s.tickets||[]).forEach(t=>{
+          insertTicket.run([
+            String(s.id)+"_"+Math.random().toString(36).slice(2,8), String(s.id),
+            t.label||"", t.adult||"", t.teen||"", t.senior||"", t.child||"", t.note||""
+          ]);
+        });
+      });
+      insertSpot.free();
+      insertTicket.free();
+      const data = db.export(); // Uint8Array(ファイルの中身そのもの)に変換
+      db.close();
+      const blob = new Blob([data], { type:"application/x-sqlite3" });
+      const today = new Date();
+      const pad2 = n => String(n).padStart(2,"0");
+      const dateStr = today.getFullYear()+pad2(today.getMonth()+1)+pad2(today.getDate());
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "tabidori_spots_"+dateStr+".sqlite";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("SQLite 파일로 저장했어요");
+    }catch(err){
+      console.error(err);
+      showToast("SQLite 저장에 실패했어요 (인터넷 연결을 확인해주세요)");
+    }
+  }
+
+  // ----- 読み込み: .sqliteファイルを選んでもらって、中身を今のspots配列に置き換える -----
+  async function importDb(file){
+    try{
+      const SQLmod = await getSQL();
+      const buf = await file.arrayBuffer();
+      const db = new SQLmod.Database(new Uint8Array(buf));
+      const spotRows = db.exec("SELECT * FROM curation_spots");
+      const ticketRows = db.exec("SELECT * FROM admission_tickets");
+      db.close();
+      if(spotRows.length === 0){ showToast("이 파일엔 스팟 데이터가 없어요"); return; }
+      const cols = spotRows[0].columns;
+      const newSpots = spotRows[0].values.map(row=>{
+        const obj = {};
+        cols.forEach((c,i)=>{ obj[c]=row[i]; });
+        return {
+          id: obj.id, name: obj.name, category: obj.category, desc: obj.description,
+          address: obj.address, area: obj.area, lat: obj.latitude, lng: obj.longitude,
+          station: obj.nearest_station, walk: obj.walk_minutes,
+          openTime: obj.open_time, closeTime: obj.close_time, hoursNote: obj.hours_note,
+          closedDays: obj.closed_days ? obj.closed_days.split("/").filter(Boolean) : [],
+          advanceKnown: !!obj.advance_booking_known, advance: obj.advance_booking_months,
+          parking: obj.parking, duration: obj.duration, needsCheck: !!obj.needs_check,
+          fee: !!obj.admission_fee, feeNote: obj.admission_note,
+          tags: obj.tags ? obj.tags.split("/").filter(Boolean) : [],
+          home: obj.homepage_url, image: obj.image_url, imageCredit: obj.image_credit,
+          tickets: []
+        };
+      });
+      if(ticketRows.length){
+        const tcols = ticketRows[0].columns;
+        ticketRows[0].values.forEach(row=>{
+          const obj = {};
+          tcols.forEach((c,i)=>{ obj[c]=row[i]; });
+          const target = newSpots.find(s=>String(s.id)===String(obj.spot_id));
+          if(target){
+            target.tickets.push({ label:obj.label, adult:obj.price_adult, teen:obj.price_teen, senior:obj.price_senior, child:obj.price_child, note:obj.ticket_note });
+          }
+        });
+      }
+      if(!confirm("SQLite 파일을 불러오면 지금 화면의 데이터("+spots.length+"개)가 전부 교체돼요. 계속할까요?")) return;
+      spots = newSpots;
+      saveSpots(spots);
+      renderList();
+      renderProgress();
+      showToast(spots.length+"개 불러왔어요");
+    }catch(err){
+      console.error(err);
+      showToast("SQLite 파일을 읽는 데 실패했어요");
+    }
+  }
+
+  document.getElementById("exportDbBtn").addEventListener("click", exportDb);
+  document.getElementById("importDbBtn").addEventListener("click", ()=>{
+    document.getElementById("importDbInput").click();
+  });
+  document.getElementById("importDbInput").addEventListener("change", (e)=>{
+    const file = e.target.files[0];
+    if(file) importDb(file);
+    e.target.value = ""; // 같은 파일을 다시 선택해도 change 이벤트가 뜨게 초기화
+  });
 
   // ===== ページが最初に開かれた時に、1回だけ実行する処理 =====
   // localStorageに前回のデータが残っていれば、それをすぐ画面に反映させるために
