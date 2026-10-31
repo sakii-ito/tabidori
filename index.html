@@ -45,57 +45,8 @@
     padding-top:env(safe-area-inset-top,0px);
     padding-bottom:env(safe-area-inset-bottom,0px);
   }
-  /* ----- ダークモード対応 -----
-     スマホやPCの設定が「ダークモード(黒っぽい画面)」になっている時、
-     ブラウザが自動でこの中の色に切り替えてくれる。
-     上の:rootで決めた色の「ダークモード版」をここで上書きしている。
-     (ユーザーが手動で data-theme="light" を指定した場合はこれを無視する、
-      という意味が :not([data-theme="light"]) だ) */
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --paper:#211A15;
-      --paper-raised:#2B2219;
-      --ink:#F3E7DA;
-      --ink-soft:#BBA797;
-      --coral:#C3E27E;
-      --coral-deep:#E7F2BC;
-      --coral-tint:#33401C;
-      --sky:#7FC4E8;
-      --sky-deep:#BDE6FA;
-      --sky-tint:#1C2E35;
-      --mint:#8FD0AE;
-      --mint-deep:#C6EBD6;
-      --mint-tint:#1C2E24;
-      --sand:#352A1F;
-      --line:#4A3C2E;
-      --danger:#F0675C;
-      --danger-tint:#3A1F1C;
-    }
-  }
-  /* ----- こっちは「手動で」ダークモードに切り替えた時用 -----
-     上のはOS設定にまかせるパターン、これはJSで
-     document要素に data-theme="dark" をつけた時に効くパターンだ。
-     (今回のフォームではボタンで切り替える機能はまだ無いけど、
-      将来そういうボタンを作る時のために両方用意してある) */
-  :root[data-theme="dark"]{
-    --paper:#211A15;
-    --paper-raised:#2B2219;
-    --ink:#F3E7DA;
-    --ink-soft:#BBA797;
-    --coral:#C3E27E;
-    --coral-deep:#E7F2BC;
-    --coral-tint:#33401C;
-    --sky:#7FC4E8;
-    --sky-deep:#BDE6FA;
-    --sky-tint:#1C2E35;
-    --mint:#8FD0AE;
-    --mint-deep:#C6EBD6;
-    --mint-tint:#1C2E24;
-    --sand:#352A1F;
-    --line:#4A3C2E;
-    --danger:#F0675C;
-    --danger-tint:#3A1F1C;
-  }
+  /* 10/31追加: 다크모드 관련 CSS(@media prefers-color-scheme / data-theme) 전부 삭제함。
+     OS 설정과 상관없이 항상 위의 :root 라이트 테마(크림색)만 쓰도록 통일。 */
   /* * はページの「全部の要素」を選ぶ記号だ。
      box-sizing:border-box は「paddingやborderを幅の中に含める」設定で、
      これを指定しておくとレイアウト崩れが起きにくくなる(おまじない的な設定)。 */
