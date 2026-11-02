@@ -691,7 +691,7 @@
     <div id="formError" class="error-text" style="display:none;"></div>
     <div class="actions">
       <button type="submit" class="btn-primary" id="submitBtn">+ 다이어리에 담기</button>
-      <!-- 10/23추가: 수정 모드일 때만 보이는 취소 버튼 -->
+      <!-- 10/23追加: 수정 모드일 때만 보이는 취소 버튼 -->
       <button type="button" class="btn-ghost" id="cancelEditBtn" style="display:none;">취소</button>
       <button type="button" class="btn-ghost" id="exportBtn">CSV로 내보내기</button>
       <!-- 10/30追加: 팀 공유용 CSV랑 별개로, 진짜 DB 파일(SQLite)로 저장/불러오기 -->
@@ -1255,9 +1255,10 @@
     });
 
     // 見出し行 + データの行たちを改行でつないで、CSVファイル全体の文字列を完成させる。
-    // 先頭の "﻿"（目には見えない文字、BOMという）は、Excelで開いた時に
+    // 先頭の "\uFEFF"（目には見えない文字、BOMという）は、Excelで開いた時に
     // 韓国語・日本語の文字が文字化けしないようにするためのおまじないだ
-    const csv = "﻿" + headers.join(",") + "\n" + rows.join("\n");
+    // 11/02修正: 見えない文字を直接書くと、コピペの時に消えたり化けたりするので "\uFEFF" という書き方に変更（意味は同じ）
+    const csv = "\uFEFF" + headers.join(",") + "\n" + rows.join("\n");
     // 10/23追加: ファイル名に日付を入れて、前に出したCSVを上書きしないようにする
     // 例: 2026-10-29 → "20261029"
     const today = new Date();
@@ -1318,6 +1319,15 @@
     return SQL;
   }
 
+  // 11/02追加: 空欄はnull(値なし)に、それ以外は本物の数字に変換する関数
+  // ""(空文字)のまま数字の列に入れると、SQLiteは「文字」として保存してしまうため
+  // 例: "1000" → 1000 / "" → null
+  const toNum = v => (v === "" || v == null) ? null : Number(v);
+  // 11/02追加: DBから読み込んだ数字を、フォーム用の文字に戻す関数
+  // 数字の0のままだと、フォームの「data.adult || ""」で空欄扱いになって消えてしまうため
+  // 例: 0 → "0" / null → ""
+  const toStr = v => v == null ? "" : String(v);
+
   // ----- 保存: 今のspots配列を、ERD通りの2つの表(curation_spots / admission_tickets)に
   //            組み立て直して、1個の.sqliteファイルとしてダウンロードする -----
   async function exportDb(){
@@ -1326,21 +1336,24 @@
       const SQLmod = await getSQL();
       const db = new SQLmod.Database();
       // CURATION_SPOTS 표(ERD v10과 동일한 구조)
+      // 11/02修正: 위도/경도는 REAL(소수), 도보분・사전예매개월・체류분은 INTEGER(정수)로 변경
+      //           (TEXT로 저장하면 정렬이나 "3000엔 이하" 같은 검색이 제대로 안 되기 때문)
       db.run(
         "CREATE TABLE curation_spots (" +
         "id TEXT PRIMARY KEY, name TEXT, category TEXT, description TEXT, address TEXT, area TEXT, " +
-        "latitude TEXT, longitude TEXT, nearest_station TEXT, walk_minutes TEXT, " +
+        "latitude REAL, longitude REAL, nearest_station TEXT, walk_minutes INTEGER, " +
         "open_time TEXT, close_time TEXT, hours_note TEXT, closed_days TEXT, " +
-        "advance_booking_known INTEGER, advance_booking_months TEXT, " +
-        "parking TEXT, duration TEXT, needs_check INTEGER, " +
+        "advance_booking_known INTEGER, advance_booking_months INTEGER, " +
+        "parking TEXT, duration INTEGER, needs_check INTEGER, " +
         "admission_fee INTEGER, admission_note TEXT, tags TEXT, " +
         "homepage_url TEXT, image_url TEXT, image_credit TEXT)"
       );
       // ADMISSION_TICKETS 표
+      // 11/02修正: 요금 4개(성인/청소년/노인/어린이)는 INTEGER(정수)로 변경
       db.run(
         "CREATE TABLE admission_tickets (" +
         "id TEXT PRIMARY KEY, spot_id TEXT, label TEXT, " +
-        "price_adult TEXT, price_teen TEXT, price_senior TEXT, price_child TEXT, ticket_note TEXT)"
+        "price_adult INTEGER, price_teen INTEGER, price_senior INTEGER, price_child INTEGER, ticket_note TEXT)"
       );
       const insertSpot = db.prepare(
         "INSERT INTO curation_spots VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
@@ -1351,17 +1364,17 @@
       spots.forEach(s=>{
         insertSpot.run([
           String(s.id), s.name||"", s.category||"", s.desc||"", s.address||"", s.area||"",
-          s.lat||"", s.lng||"", s.station||"", s.walk||"",
+          toNum(s.lat), toNum(s.lng), s.station||"", toNum(s.walk),   // 11/02: 숫자로 변환
           s.openTime||"", s.closeTime||"", s.hoursNote||"", (s.closedDays||[]).join("/"),
-          s.advanceKnown?1:0, s.advance||"",
-          s.parking||"", s.duration||"", s.needsCheck?1:0,
+          s.advanceKnown?1:0, toNum(s.advance),                       // 11/02: 숫자로 변환
+          s.parking||"", toNum(s.duration), s.needsCheck?1:0,         // 11/02: 숫자로 변환
           s.fee?1:0, s.feeNote||"", (s.tags||[]).join("/"),
           s.home||"", s.image||"", s.imageCredit||""
         ]);
         (s.tickets||[]).forEach(t=>{
           insertTicket.run([
             String(s.id)+"_"+Math.random().toString(36).slice(2,8), String(s.id),
-            t.label||"", t.adult||"", t.teen||"", t.senior||"", t.child||"", t.note||""
+            t.label||"", toNum(t.adult), toNum(t.teen), toNum(t.senior), toNum(t.child), t.note||""  // 11/02: 요금을 숫자로 변환
           ]);
         });
       });
@@ -1401,12 +1414,12 @@
         cols.forEach((c,i)=>{ obj[c]=row[i]; });
         return {
           id: obj.id, name: obj.name, category: obj.category, desc: obj.description,
-          address: obj.address, area: obj.area, lat: obj.latitude, lng: obj.longitude,
-          station: obj.nearest_station, walk: obj.walk_minutes,
+          address: obj.address, area: obj.area, lat: toStr(obj.latitude), lng: toStr(obj.longitude),  // 11/02: 숫자→문자
+          station: obj.nearest_station, walk: toStr(obj.walk_minutes),                                 // 11/02: 숫자→문자
           openTime: obj.open_time, closeTime: obj.close_time, hoursNote: obj.hours_note,
           closedDays: obj.closed_days ? obj.closed_days.split("/").filter(Boolean) : [],
-          advanceKnown: !!obj.advance_booking_known, advance: obj.advance_booking_months,
-          parking: obj.parking, duration: obj.duration, needsCheck: !!obj.needs_check,
+          advanceKnown: !!obj.advance_booking_known, advance: toStr(obj.advance_booking_months),       // 11/02: 숫자→문자
+          parking: obj.parking, duration: toStr(obj.duration), needsCheck: !!obj.needs_check,          // 11/02: 숫자→문자
           fee: !!obj.admission_fee, feeNote: obj.admission_note,
           tags: obj.tags ? obj.tags.split("/").filter(Boolean) : [],
           home: obj.homepage_url, image: obj.image_url, imageCredit: obj.image_credit,
@@ -1420,7 +1433,8 @@
           tcols.forEach((c,i)=>{ obj[c]=row[i]; });
           const target = newSpots.find(s=>String(s.id)===String(obj.spot_id));
           if(target){
-            target.tickets.push({ label:obj.label, adult:obj.price_adult, teen:obj.price_teen, senior:obj.price_senior, child:obj.price_child, note:obj.ticket_note });
+            // 11/02: 요금도 숫자→문자로 되돌림 (0엔이 사라지지 않게)
+            target.tickets.push({ label:obj.label, adult:toStr(obj.price_adult), teen:toStr(obj.price_teen), senior:toStr(obj.price_senior), child:toStr(obj.price_child), note:obj.ticket_note });
           }
         });
       }
