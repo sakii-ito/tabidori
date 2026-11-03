@@ -458,8 +458,57 @@
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+  /* ============================================================
+     11/03追加: 都道府県タイルマップ（どこを入力済みか一目で分かる地図）
+     47都道府県を1マスずつ、日本の形っぽく並べている。
+     件数0=点線の白マス / 1件=きみどり / 2件以上=濃い緑
+     ============================================================ */
+  .map-card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:18px 16px 16px;
+    margin-bottom:22px;
+  }
+  .map-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+  .map-head h2{font-family:"Gaegu","Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-weight:700;font-size:1.15rem;margin:0;}
+  .map-count{font-family:"Gaegu","Apple SD Gothic Neo",sans-serif;font-weight:700;font-size:1rem;color:var(--coral-deep);}
+  /* 14列×11行のマス目。マスの位置はJS側で grid-column / grid-row を指定して置く */
+  .pref-map{
+    display:grid;
+    grid-template-columns:repeat(14,1fr);
+    grid-template-rows:repeat(11,auto);
+    gap:3px;
+  }
+  .pref-tile{
+    aspect-ratio:1;
+    border-radius:6px;
+    border:1.5px dashed var(--line);
+    background:var(--paper);
+    color:var(--ink-soft);
+    font-size:0.56rem;
+    line-height:1.05;
+    padding:1px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;
+    cursor:pointer;
+    word-break:keep-all;
+    overflow:hidden;
+  }
+  .pref-tile .n{font-weight:700;font-size:0.62rem;}
+  .pref-tile.lv1{background:var(--coral);border:1.5px solid var(--coral);color:#33401C;}
+  .pref-tile.lv2{background:var(--coral-deep);border:1.5px solid var(--coral-deep);color:#fff;}
+  .map-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:0.75rem;color:var(--ink-soft);}
+  .map-legend span{display:inline-flex;align-items:center;gap:4px;}
+  .map-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;}
+  .map-missing{margin-top:10px;font-size:0.8rem;color:var(--ink-soft);word-break:keep-all;}
+  .map-missing b{color:var(--ink);}
+  .map-warn{margin-top:8px;font-size:0.8rem;color:var(--danger);}
+
   @media (max-width:460px){
     .grid{grid-template-columns:1fr;}
+    .pref-tile{font-size:0.45rem;}
+    .pref-tile .n{font-size:0.5rem;}
   }
 </style>
 </head>
@@ -479,6 +528,22 @@
       <span class="route-count display" id="routeCount">0 / 60</span>
     </div>
   </header>
+
+  <!-- 11/03追加: 都道府県タイルマップ -->
+  <section class="map-card">
+    <div class="map-head">
+      <h2>도도부현 지도</h2>
+      <span class="map-count" id="mapCount">0 / 47</span>
+    </div>
+    <div class="pref-map" id="prefMap"></div>
+    <div class="map-legend">
+      <span><i style="border:1.5px dashed var(--line);background:var(--paper);"></i>아직 없음</span>
+      <span><i style="background:var(--coral);"></i>1개</span>
+      <span><i style="background:var(--coral-deep);"></i>2개 이상</span>
+    </div>
+    <div class="map-missing" id="mapMissing"></div>
+    <div class="map-warn" id="mapWarn"></div>
+  </section>
 
   <form class="postcard" id="spotForm">
     <div class="tape"></div>
@@ -516,11 +581,15 @@
           <label for="f-addr">주소</label>
           <input type="text" id="f-addr" placeholder="예: 도쿄도 신주쿠구 ...">
         </div>
+        <!-- 11/03追加: 도도부현(都道府県)。選択肢はJSのPREFS配列から自動で作る -->
+        <div class="field">
+          <label class="req" for="f-pref">도도부현</label>
+          <select id="f-pref"><option value="">선택해주세요</option></select>
+        </div>
         <div class="field">
           <label class="req" for="f-area">지역(에어리어)</label>
           <input type="text" id="f-area" placeholder="예: 신주쿠, 아사쿠사, 교토">
         </div>
-        <div class="field"></div>
         <div class="field">
           <label class="req" for="f-lat">위도 (latitude)</label>
           <input type="number" id="f-lat" step="any" placeholder="예: 35.6938">
@@ -787,6 +856,72 @@
     routeFill.style.width = pct + "%";   // バーの緑色の幅をパーセントに合わせて伸ばす
     routePin.style.left = pct + "%";     // ピンのアイコンも同じ位置まで移動させる
     routeCount.textContent = spots.length + " / " + GOAL; // "12 / 60" のような文字に更新
+    renderMap(); // 11/03追加: 件数が変わる時は地図も一緒に描き直す
+  }
+
+  // ===== 11/03追加: 47都道府県のデータ =====
+  // [正式名(プルダウン・保存用), 地図のマスに出す短い名前, 列(x), 行(y)]
+  // x・y は地図のマス目の位置。北海道が右上、沖縄が左下になるように並べている
+  const PREFS = [
+    ["홋카이도","홋카이도",12,0],
+    ["아오모리현","아오모리",12,1],
+    ["아키타현","아키타",11,2],["이와테현","이와테",12,2],
+    ["이시카와현","이시카와",8,3],["도야마현","도야마",9,3],["니가타현","니가타",10,3],["야마가타현","야마가타",11,3],["미야기현","미야기",12,3],
+    ["후쿠이현","후쿠이",8,4],["기후현","기후",9,4],["나가노현","나가노",10,4],["군마현","군마",11,4],["후쿠시마현","후쿠시마",12,4],
+    ["야마구치현","야마구치",2,5],["시마네현","시마네",3,5],["돗토리현","돗토리",4,5],["효고현","효고",5,5],["교토부","교토",6,5],["시가현","시가",7,5],
+    ["아이치현","아이치",8,5],["시즈오카현","시즈오카",9,5],["야마나시현","야마나시",10,5],["사이타마현","사이타마",11,5],["도치기현","도치기",12,5],["이바라키현","이바라키",13,5],
+    ["사가현","사가",0,6],["후쿠오카현","후쿠오카",1,6],["히로시마현","히로시마",3,6],["오카야마현","오카야마",4,6],["오사카부","오사카",5,6],["나라현","나라",6,6],["미에현","미에",7,6],
+    ["가나가와현","가나가와",10,6],["도쿄도","도쿄",11,6],["지바현","지바",12,6],
+    ["나가사키현","나가사키",0,7],["구마모토현","구마모토",1,7],["오이타현","오이타",2,7],["에히메현","에히메",3,7],["가가와현","가가와",4,7],["와카야마현","와카야마",6,7],
+    ["가고시마현","가고시마",1,8],["미야자키현","미야자키",2,8],["고치현","고치",3,8],["도쿠시마현","도쿠시마",4,8],
+    ["오키나와현","오키나와",0,10]
+  ];
+
+  // プルダウン(<select id="f-pref">)の選択肢を、PREFS配列から47個まとめて作る
+  const prefSelect = document.getElementById("f-pref");
+  PREFS.forEach(p=>{
+    const opt = document.createElement("option");
+    opt.value = p[0]; opt.textContent = p[0];
+    prefSelect.appendChild(opt);
+  });
+
+  // ===== 11/03追加: 都道府県タイルマップを描く関数 =====
+  function renderMap(){
+    // ① 都道府県ごとの件数を数える。例: {"도쿄도":2, "가나가와현":2}
+    const counts = {};
+    spots.forEach(s=>{ if(s.prefecture) counts[s.prefecture] = (counts[s.prefecture]||0) + 1; });
+
+    // ② 47マスを作る。件数によってクラス(lv1/lv2)を変えて色を付ける
+    document.getElementById("prefMap").innerHTML = PREFS.map(p=>{
+      const n = counts[p[0]] || 0;
+      const lv = n >= 2 ? " lv2" : (n === 1 ? " lv1" : "");
+      return '<div class="pref-tile'+lv+'" data-pref="'+p[0]+'" title="'+p[0]+' '+n+'개" '+
+             'style="grid-column:'+(p[2]+1)+';grid-row:'+(p[3]+1)+';">'+
+             '<span>'+p[1]+'</span>'+(n?'<span class="n">'+n+'</span>':'')+'</div>';
+    }).join("");
+
+    // ③ 上の「○ / 47」と、まだ0件の都道府県リストを更新
+    const filled = PREFS.filter(p=>counts[p[0]]).length;
+    document.getElementById("mapCount").textContent = filled + " / 47";
+    const missing = PREFS.filter(p=>!counts[p[0]]).map(p=>p[1]);
+    document.getElementById("mapMissing").innerHTML = missing.length
+      ? '<b>아직 없는 곳 ('+missing.length+')</b> '+missing.join(" · ")
+      : '<b>🎉 47개 도도부현 전부 채웠어요!</b>';
+
+    // ④ 都道府県が入っていない昔のスポットがあれば、赤字で知らせる（✎で直してもらう）
+    const noPref = spots.filter(s=>!s.prefecture).length;
+    document.getElementById("mapWarn").textContent = noPref
+      ? "⚠ 도도부현이 비어있는 스팟이 "+noPref+"개 있어요. 아래 목록에서 ✎로 수정해주세요"
+      : "";
+
+    // ⑤ マスをクリックすると、その都道府県のスポット名をお知らせで出す
+    document.querySelectorAll(".pref-tile").forEach(tile=>{
+      tile.addEventListener("click", ()=>{
+        const pref = tile.getAttribute("data-pref");
+        const names = spots.filter(s=>s.prefecture===pref).map(s=>s.name);
+        showToast(pref+": "+(names.length ? names.join(", ") : "아직 없어요"));
+      });
+    });
   }
 
   // ===== 保存したスポット一覧を画面に描く =====
@@ -813,6 +948,7 @@
       // 空欄の項目はカードに表示されない仕組みになっている
       const rows = [];
       if(s.address) rows.push('<span><b>주소</b> '+escapeHtml(s.address)+(s.area?' ('+escapeHtml(s.area)+')':'')+'</span>');
+      if(s.prefecture) rows.push('<span><b>도도부현</b> '+escapeHtml(s.prefecture)+'</span>'); // 11/03追加
       // 위도/경도가 둘 다 있으면, 그 자리에서 구글맵 링크를 바로 만들어서 보여준다.
       // (map_url을 따로 저장 안 하고, lat/lng으로부터 즉석에서 링크를 조립하는 방식)
       if(s.lat && s.lng){
@@ -1062,6 +1198,7 @@
     document.getElementById("f-desc").value = s.desc || "";
     document.getElementById("f-addr").value = s.address || "";
     document.getElementById("f-area").value = s.area || "";
+    document.getElementById("f-pref").value = s.prefecture || ""; // 11/03追加
     document.getElementById("f-lat").value = s.lat || "";
     document.getElementById("f-lng").value = s.lng || "";
     document.getElementById("f-station").value = s.station || "";
@@ -1131,11 +1268,13 @@
     // 10/23追加: ラベルには必須(*)と書いてあるのに、実際はname以外チェックしてなかったバグを修正
     const name = document.getElementById("f-name").value.trim();
     const area = document.getElementById("f-area").value.trim();
+    const pref = document.getElementById("f-pref").value; // 11/03追加
     const lat = document.getElementById("f-lat").value.trim();
     const lng = document.getElementById("f-lng").value.trim();
     // requiredChecks: [値, エラーメッセージ, フォーカスを戻すid] の組み合わせを順番にチェックする配列
     const requiredChecks = [
       [name, "스팟 이름은 꼭 입력해주세요", "f-name"],
+      [pref, "도도부현을 선택해주세요", "f-pref"],
       [area, "지역(에어리어)은 꼭 입력해주세요", "f-area"],
       [lat, "위도는 꼭 입력해주세요", "f-lat"],
       [lng, "경도는 꼭 입력해주세요", "f-lng"]
@@ -1162,6 +1301,7 @@
       category: document.getElementById("f-cat").value,          // プルダウンで選んだカテゴリ
       desc: document.getElementById("f-desc").value.trim(),
       address: document.getElementById("f-addr").value.trim(),
+      prefecture: pref,  // 11/03追加: 도도부현
       area: area,       // 10/15 추가: 지역명(교토/아사쿠사 등). 10/23: 위에서 검증에 쓴 변수 그대로 재사용
       lat: lat,                  // 10/15 추가: 위도 (map_url 대신)
       lng: lng,                  // 10/15 추가: 경도 (map_url 대신)
@@ -1233,7 +1373,7 @@
     // 10/16: 티켓마다로 옮겼다가, 입력부담 커서 다시 스팟 전체 1개(연령비고 열)로 원복함
     // 10/22: place_id 열 삭제 (핵심 기능에 안 쓰이고 입력부담만 커서)
     // 10/22: 사전예매 가능여부(사전예매가능)와 개월수(사전예매개월)를 분리해서 열 추가
-    const headers = ["이름","카테고리","소개","주소","지역","위도","경도","최근역","도보분","영업시작","영업종료","예외사항","휴무요일","사전예매가능","사전예매개월","주차장","체류분","재확인필요","입장료유무","티켓종류별요금","연령비고","태그","홈페이지","이미지","이미지출처"];
+    const headers = ["이름","카테고리","소개","주소","도도부현","지역","위도","경도","최근역","도보분","영업시작","영업종료","예외사항","휴무요일","사전예매가능","사전예매개월","주차장","체류분","재확인필요","입장료유무","티켓종류별요금","연령비고","태그","홈페이지","이미지","이미지출처"];
 
     // spots配列を1件ずつ「CSVの1行分の文字列」に変換していく
     const rows = spots.map(s => {
@@ -1245,7 +1385,7 @@
       ).join("; ");
       // 配列の中に、headersと同じ順番で値を並べる
       return [
-        s.name, s.category, s.desc, s.address, s.area, s.lat, s.lng, s.station, s.walk,
+        s.name, s.category, s.desc, s.address, s.prefecture, s.area, s.lat, s.lng, s.station, s.walk,
         s.openTime, s.closeTime, s.hoursNote, (s.closedDays||[]).join("/"),
         s.advanceKnown ? "Y":"N", s.advance, s.parking, s.duration,
         s.needsCheck ? "Y":"N", s.fee ? "Y":"N", ticketStr, s.feeNote,
@@ -1340,7 +1480,7 @@
       //           (TEXT로 저장하면 정렬이나 "3000엔 이하" 같은 검색이 제대로 안 되기 때문)
       db.run(
         "CREATE TABLE curation_spots (" +
-        "id TEXT PRIMARY KEY, name TEXT, category TEXT, description TEXT, address TEXT, area TEXT, " +
+        "id TEXT PRIMARY KEY, name TEXT, category TEXT, description TEXT, address TEXT, prefecture TEXT, area TEXT, " +
         "latitude REAL, longitude REAL, nearest_station TEXT, walk_minutes INTEGER, " +
         "open_time TEXT, close_time TEXT, hours_note TEXT, closed_days TEXT, " +
         "advance_booking_known INTEGER, advance_booking_months INTEGER, " +
@@ -1356,14 +1496,14 @@
         "price_adult INTEGER, price_teen INTEGER, price_senior INTEGER, price_child INTEGER, ticket_note TEXT)"
       );
       const insertSpot = db.prepare(
-        "INSERT INTO curation_spots VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+        "INSERT INTO curation_spots VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 11/03: prefecture 추가로 26개
       );
       const insertTicket = db.prepare(
         "INSERT INTO admission_tickets VALUES (?,?,?,?,?,?,?,?)"
       );
       spots.forEach(s=>{
         insertSpot.run([
-          String(s.id), s.name||"", s.category||"", s.desc||"", s.address||"", s.area||"",
+          String(s.id), s.name||"", s.category||"", s.desc||"", s.address||"", s.prefecture||"", s.area||"",  // 11/03: prefecture 추가
           toNum(s.lat), toNum(s.lng), s.station||"", toNum(s.walk),   // 11/02: 숫자로 변환
           s.openTime||"", s.closeTime||"", s.hoursNote||"", (s.closedDays||[]).join("/"),
           s.advanceKnown?1:0, toNum(s.advance),                       // 11/02: 숫자로 변환
@@ -1414,7 +1554,7 @@
         cols.forEach((c,i)=>{ obj[c]=row[i]; });
         return {
           id: obj.id, name: obj.name, category: obj.category, desc: obj.description,
-          address: obj.address, area: obj.area, lat: toStr(obj.latitude), lng: toStr(obj.longitude),  // 11/02: 숫자→문자
+          address: obj.address, prefecture: obj.prefecture || "", area: obj.area, lat: toStr(obj.latitude), lng: toStr(obj.longitude),  // 11/02: 숫자→문자
           station: obj.nearest_station, walk: toStr(obj.walk_minutes),                                 // 11/02: 숫자→문자
           openTime: obj.open_time, closeTime: obj.close_time, hoursNote: obj.hours_note,
           closedDays: obj.closed_days ? obj.closed_days.split("/").filter(Boolean) : [],
