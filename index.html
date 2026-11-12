@@ -690,6 +690,10 @@
               <label for="f-advance">몇 개월 전부터 예약 가능한지(개월 수)</label>
               <input type="number" id="f-advance" min="0" placeholder="개월 단위 숫자로, 모르면 비워두기">
             </div>
+            <div class="field full">
+              <label for="f-advance-note">사전예매 관련 참고사항 (선택)</label>
+              <input type="text" id="f-advance-note" placeholder="예: 입장 2개월 전 10일 14:00 발매, 현지 당일 구매 불가">
+            </div>
           </div>
           <p class="hint" style="margin:8px 0 0;">⚠️ 비워두고 저장하면 "정보 재확인 필요"로 자동 표시돼요</p>
         </div>
@@ -973,6 +977,8 @@
       if(s.feeNote) rows.push('<span><b>요금 비고</b> '+escapeHtml(s.feeNote)+'</span>');
       // 10/22추가: 사전예매 토글이 켜져있으면 카드에도 표시 (개월수 있으면 숫자, 없으면 "확인 필요")
       if(s.advanceKnown) rows.push('<span><b>사전예매</b> '+(s.advance?escapeHtml(s.advance)+'개월 전부터 가능':'가능(개월수 확인 필요)')+'</span>');
+      // 11/11추가: 사전예매 참고사항(발매일, 구매처 등 텍스트)도 카드에 표시
+      if(s.advanceKnown && s.advanceNote) rows.push('<span><b>사전예매 참고</b> '+escapeHtml(s.advanceNote)+'</span>');
       // 「정보 재확인 필요」にチェックが入っていたら、赤文字の注意書きを追加
       if(s.needsCheck) rows.push('<span style="color:var(--danger)">⚠ 정보 재확인 필요</span>');
       if(s.home) rows.push('<span><b>홈페이지</b> <a href="'+escapeHtml(s.home)+'" target="_blank" rel="noopener">열기</a></span>');
@@ -1244,6 +1250,7 @@
     advanceFields.classList.toggle("show", advanceOn);
     advanceLabel.textContent = advanceOn ? "사전예매 가능" : "사전예매 모름";
     document.getElementById("f-advance").value = s.advance || "";
+    document.getElementById("f-advance-note").value = s.advanceNote || ""; // 11/11추가
 
     editingId = s.id;                               // 이제부터 "수정 모드"
     submitBtn.textContent = "✎ 수정 완료";
@@ -1315,6 +1322,7 @@
       closedDays: selectedDays.slice(),
       advanceKnown: advanceOn,                      // 10/22追加: 사전예매 가능 여부 자체(토글 상태)
       advance: advanceOn ? document.getElementById("f-advance").value : "",
+      advanceNote: advanceOn ? document.getElementById("f-advance-note").value.trim() : "", // 11/11추가: 사전예매 관련 참고사항
       parking: document.getElementById("f-parking").value,
       duration: document.getElementById("f-duration").value,
       // needsCheck: 체크박스를 직접 눌렀거나, "사전예매 가능"인데 몇개월인지 비워뒀으면 자동으로 true
@@ -1373,7 +1381,8 @@
     // 10/16: 티켓마다로 옮겼다가, 입력부담 커서 다시 스팟 전체 1개(연령비고 열)로 원복함
     // 10/22: place_id 열 삭제 (핵심 기능에 안 쓰이고 입력부담만 커서)
     // 10/22: 사전예매 가능여부(사전예매가능)와 개월수(사전예매개월)를 분리해서 열 추가
-    const headers = ["이름","카테고리","소개","주소","도도부현","지역","위도","경도","최근역","도보분","영업시작","영업종료","예외사항","휴무요일","사전예매가능","사전예매개월","주차장","체류분","재확인필요","입장료유무","티켓종류별요금","연령비고","태그","홈페이지","이미지","이미지출처"];
+    // 11/11추가: 사전예매 참고사항(사전예매비고) 열 추가
+    const headers = ["이름","카테고리","소개","주소","도도부현","지역","위도","경도","최근역","도보분","영업시작","영업종료","예외사항","휴무요일","사전예매가능","사전예매개월","사전예매비고","주차장","체류분","재확인필요","입장료유무","티켓종류별요금","연령비고","태그","홈페이지","이미지","이미지출처"];
 
     // spots配列を1件ずつ「CSVの1行分の文字列」に変換していく
     const rows = spots.map(s => {
@@ -1387,7 +1396,7 @@
       return [
         s.name, s.category, s.desc, s.address, s.prefecture, s.area, s.lat, s.lng, s.station, s.walk,
         s.openTime, s.closeTime, s.hoursNote, (s.closedDays||[]).join("/"),
-        s.advanceKnown ? "Y":"N", s.advance, s.parking, s.duration,
+        s.advanceKnown ? "Y":"N", s.advance, s.advanceNote, s.parking, s.duration,
         s.needsCheck ? "Y":"N", s.fee ? "Y":"N", ticketStr, s.feeNote,
         (s.tags||[]).join("/"), s.home, s.image, s.imageCredit
       // .map(toCsvField) で各値をCSV用に安全な形に変換 → .join(",") でカンマ区切りの1行の文字列にする
@@ -1483,7 +1492,7 @@
         "id TEXT PRIMARY KEY, name TEXT, category TEXT, description TEXT, address TEXT, prefecture TEXT, area TEXT, " +
         "latitude REAL, longitude REAL, nearest_station TEXT, walk_minutes INTEGER, " +
         "open_time TEXT, close_time TEXT, hours_note TEXT, closed_days TEXT, " +
-        "advance_booking_known INTEGER, advance_booking_months INTEGER, " +
+        "advance_booking_known INTEGER, advance_booking_months INTEGER, advance_booking_note TEXT, " + // 11/11: 사전예매 참고사항 열 추가
         "parking TEXT, duration INTEGER, needs_check INTEGER, " +
         "admission_fee INTEGER, admission_note TEXT, tags TEXT, " +
         "homepage_url TEXT, image_url TEXT, image_credit TEXT)"
@@ -1496,7 +1505,7 @@
         "price_adult INTEGER, price_teen INTEGER, price_senior INTEGER, price_child INTEGER, ticket_note TEXT)"
       );
       const insertSpot = db.prepare(
-        "INSERT INTO curation_spots VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 11/03: prefecture 추가로 26개
+        "INSERT INTO curation_spots VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 11/11: advance_booking_note 추가로 27개
       );
       const insertTicket = db.prepare(
         "INSERT INTO admission_tickets VALUES (?,?,?,?,?,?,?,?)"
@@ -1506,7 +1515,7 @@
           String(s.id), s.name||"", s.category||"", s.desc||"", s.address||"", s.prefecture||"", s.area||"",  // 11/03: prefecture 추가
           toNum(s.lat), toNum(s.lng), s.station||"", toNum(s.walk),   // 11/02: 숫자로 변환
           s.openTime||"", s.closeTime||"", s.hoursNote||"", (s.closedDays||[]).join("/"),
-          s.advanceKnown?1:0, toNum(s.advance),                       // 11/02: 숫자로 변환
+          s.advanceKnown?1:0, toNum(s.advance), s.advanceNote||"",    // 11/11: 사전예매 참고사항 추가
           s.parking||"", toNum(s.duration), s.needsCheck?1:0,         // 11/02: 숫자로 변환
           s.fee?1:0, s.feeNote||"", (s.tags||[]).join("/"),
           s.home||"", s.image||"", s.imageCredit||""
@@ -1559,6 +1568,7 @@
           openTime: obj.open_time, closeTime: obj.close_time, hoursNote: obj.hours_note,
           closedDays: obj.closed_days ? obj.closed_days.split("/").filter(Boolean) : [],
           advanceKnown: !!obj.advance_booking_known, advance: toStr(obj.advance_booking_months),       // 11/02: 숫자→문자
+          advanceNote: obj.advance_booking_note || "",                                                 // 11/11추가
           parking: obj.parking, duration: toStr(obj.duration), needsCheck: !!obj.needs_check,          // 11/02: 숫자→문자
           fee: !!obj.admission_fee, feeNote: obj.admission_note,
           tags: obj.tags ? obj.tags.split("/").filter(Boolean) : [],
