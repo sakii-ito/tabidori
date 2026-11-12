@@ -25,7 +25,7 @@
 
 스팟(CURATION_SPOTS)과 입장권(ADMISSION_TICKETS) 2개 테이블로 구성되어 있습니다.
 
-- `CURATION_SPOTS`: 스팟 기본 정보 (이름, 도도부현, 지역, 위치, 영업시간, 태그 등)
+- `CURATION_SPOTS`: 스팟 기본 정보 (이름, 도도부현, 지역, 위치, 영업시간, 사전예매 정보, 태그 등)
 - `ADMISSION_TICKETS`: 스팟별 입장권 종류 & 요금, 이용 제한 메모(ticket_note) (1개 스팟 : 여러 개 티켓)
 
 ## 🛠️ 기술 스택
